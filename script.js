@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM carregado. Iniciando script...");
 
     // --- 1. CONFIGURAÇÕES ---
-    const API_URL = 'http://localhost:3000'; // <-- CORREÇÃO
+    const API_URL = 'https://acai-do-heitor-backend.onrender.com';
     const WHATSAPP_NUMBER = "5584981475289";
     const DELIVERY_FEE = 2.00;
 
