@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Controle - Açaí do Heitor</title>
+    <link rel="stylesheet" href="admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h3><span class="nav-link-text">Açaí do Heitor</span></h3>
+            </div>
+            <ul>
+                <li><a href="#" class="nav-link active" data-view="pedidos-view"><i class="fas fa-tasks"></i> <span class="nav-link-text">Pedidos</span></a></li>
+                <li><a href="#" class="nav-link" data-view="relatorios-view"><i class="fas fa-chart-pie"></i> <span class="nav-link-text">Relatórios</span></a></li>
+            </ul>
+        </nav>
+
+        <div class="main-content">
+            <header>
+                <h1>Painel de Controle</h1>
+            </header>
+            <main>
+                <section class="stats-cards">
+                    <div class="stat-card">
+                        <h4>Pedidos Hoje</h4>
+                        <p id="total-orders-today">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Faturamento do Dia</h4>
+                        <p id="total-revenue-today">R$ 0,00</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Ticket Médio</h4>
+                        <p id="average-ticket">R$ 0,00</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Novos Pedidos</h4>
+                        <p id="new-orders-count">0</p>
+                    </div>
+                </section>
+
+                <div id="pedidos-view" class="view active-view">
+                    <div id="orders-dashboard">
+                        <div class="order-column" id="new-orders-col">
+                            <h2>Novos Pedidos</h2>
+                            <div class="orders-list"></div>
+                        </div>
+                        <div class="order-column" id="in-progress-col">
+                            <h2>Em Preparo</h2>
+                            <div class="orders-list"></div>
+                        </div>
+                        <div class="order-column" id="out-for-delivery-col">
+                            <h2>Saiu para Entrega</h2>
+                            <div class="orders-list"></div>
+                        </div>
+                        <div class="order-column" id="completed-col">
+                            <h2>Concluídos</h2>
+                            <div class="orders-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="relatorios-view" class="view">
+                    <h2>Relatórios e Gráficos</h2>
+                    <div class="charts-grid">
+                        <div class="chart-container">
+                            <h3>Pedidos por Status</h3>
+                            <div class="placeholder">Função de gráficos temporariamente desativada.</div>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Faturamento (Em breve)</h3>
+                            <div class="placeholder">Gráfico de faturamento diário/semanal.</div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script src="admin.js"></script>
+</body>
+</html>

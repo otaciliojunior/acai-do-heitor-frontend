@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Açaí do Heitor</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+
+    <header>
+    <div class="container">
+        <div class="brand-info">
+            <div class="logo">
+                <img src="img/logo.png" alt="Açaí do Heitor Logo">
+            </div>
+            <div class="operating-hours">
+                <span class="status open">Aberto agora</span>
+                <span>Ter - Dom: 18:00 às 22:00</span>
+            </div>
+        </div>
+        <div class="menu-icon">
+            <i class="fas fa-bars"></i>
+        </div>
+    </div>
+</header>
+
+    <section id="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Escolha seu<br>açaí <span class="highlight">favorito.</span></h1>
+                <p>Aproveite nosso cardápio! Escolha o que desejar e receba em sua casa de forma rápida e segura.</p>
+                <a href="#menu" class="btn-primary" id="view-menu-btn">Ver cardápio</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="services">
+        <div class="container">
+            <p class="section-subtitle">SERVIÇOS</p>
+            <h2>Como são nossos serviços?</h2>
+            <div class="services-grid">
+                <div class="service-item">
+                    <img src="img/acai1.png" alt="Fácil de pedir">
+                    <h3>Fácil de pedir</h3>
+                    <p>Você só precisa de alguns passos para pedir o seu açaí.</p>
+                </div>
+                <div class="service-item">
+                    <img src="img/acai3.png" alt="Entrega rápida">
+                    <h3>Entrega rápida</h3>
+                    <p>Nossa entrega é sempre pontual, rápida e segura.</p>
+                </div>
+                <div class="service-item">
+                    <img src="img/acai4.png" alt="Melhor qualidade">
+                    <h3>Melhor qualidade</h3>
+                    <p>Não só a rapidez na entrega, a qualidade também é o nosso forte.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <main id="menu">
+        <div class="container">
+            <section>
+                <p class="section-subtitle">CARDÁPIO</p>
+                <h2>Conheça o nosso cardápio</h2>
+                <div class="category-filters">
+                    <button class="filter-btn active" data-category="all"><i class="fas fa-utensils"></i> Todos</button>
+                    <button class="filter-btn" data-category="acai"><i class="fas fa-ice-cream"></i> Açaí</button>
+                    <button class="filter-btn" data-category="petiscos"><i class="fas fa-drumstick-bite"></i> Petiscos</button>
+                </div>
+                
+                <div class="product-list">
+                    <div class="product-item" data-category="acai" data-name="Açaí 500ML" data-price="18.00">
+                        <div class="product-info">
+                            <img src="img/img1.png" alt="Açaí 500ml">
+                            <div class="product-details">
+                                <h3>Açaí 500ML</h3>
+                                <p class="price">R$ 18,00</p>
+                            </div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="add-btn">Personalizar</button>
+                        </div>
+                    </div>
+                    <div class="product-item" data-category="acai" data-name="Açaí 350ML" data-price="12.00">
+                        <div class="product-info">
+                            <img src="img/img2.png" alt="Açaí 350ml">
+                            <div class="product-details">
+                                <h3>Açaí 350ML</h3>
+                                <p class="price">R$ 12,00</p>
+                            </div>
+                        </div>
+                         <div class="product-actions">
+                            <button class="add-btn">Personalizar</button>
+                        </div>
+                    </div>
+                    <div class="product-item" data-category="petiscos" data-name="Batata Frita com Cheddar" data-price="25.00">
+                        <div class="product-info">
+                            <img src="https://comofazer.online/wp-content/uploads/2019/12/batata-frita-light-imagem-ilustrativa-da-receita_1436341.jpg" alt="Batata Frita">
+                            <div class="product-details">
+                                <h3>Batata Frita com Cheddar</h3>
+                                <p class="price">R$ 25,00</p>
+                            </div>
+                        </div>
+                         <div class="product-actions">
+                            <button class="add-btn">Adicionar</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+    
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <img src="img/logo.png" alt="Logo Açaí do Heitor" class="footer-logo">
+                <p class="footer-slogan">A energia que te move, agora mais perto de você.</p>
+                
+                <h3>NAVEGUE</h3>
+                <ul class="footer-nav">
+                    <li><a href="#menu">Fazer Pedido</a></li>
+                    <li><a href="#menu">Nossas Delícias</a></li>
+                    <li><a href="#">Sobre Nós</a></li>
+                    <li><a href="#">Contato</a></li>
+                </ul>
+                
+                <h3>SIGA-NOS</h3>
+                <div class="social-icons">
+                    <a href="#" class="social-icon instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="social-icon facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="social-icon whatsapp"><i class="fab fa-whatsapp"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-copy">
+            <p>© 2025 Açaí do Heitor. Todos os direitos reservados.</p>
+            <p>Desenvolvido por <a href="#">Eleva Pixel</a> 🧡</p>
+        </div>
+    </footer>
+    
+    <div id="cart-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Seu Carrinho</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body" id="cart-items"></div>
+            <div class="modal-footer">
+                <div class="totals">
+                    <p>Subtotal: <span id="subtotal">R$ 0,00</span></p>
+                    <p>Entrega: <span id="delivery-fee">R$ 2,00</span></p>
+                    <h3>Total: <span id="total-price">R$ 0,00</span></h3>
+                </div>
+                <button id="checkout-btn" class="btn-primary" disabled>Continuar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="address-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Endereço e Pagamento</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="address-form" novalidate>
+                    <div class="form-group"><label for="customer-name">Seu Nome:</label><input type="text" id="customer-name" placeholder="Digite seu nome completo" required></div>
+                    <div class="form-group"><label for="customer-phone">Seu WhatsApp:</label><input type="tel" id="customer-phone" placeholder="DDD + Número (só dígitos)" required></div>
+                    <div class="form-group"><label for="delivery-location">Local de Entrega:</label><select id="delivery-location" required><option value="">Selecione um bairro</option><option value="Centro">Centro</option><option value="Vila Nova">Vila Nova</option><option value="Jardim das Flores">Jardim das Flores</option></select></div>
+                    <div class="form-group"><label for="reference-point">Ponto de Referência:</label><textarea id="reference-point" rows="3" placeholder="Ex: Próximo à padaria, casa azul..."></textarea></div>
+                    
+                    <div class="form-group">
+                        <label>Forma de Pagamento:</label>
+                        <div class="payment-options">
+                            <div class="payment-option-wrapper">
+                                <input type="radio" id="pix" name="payment" value="Pix" checked>
+                                <label for="pix" class="payment-option">
+                                    <i class="fas fa-qrcode"></i>
+                                    <span>Pix</span>
+                                </label>
+                            </div>
+                            <div class="payment-option-wrapper">
+                                <input type="radio" id="dinheiro" name="payment" value="Dinheiro">
+                                <label for="dinheiro" class="payment-option">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                    <span>Dinheiro</span>
+                                </label>
+                            </div>
+                            <div class="payment-option-wrapper">
+                                <input type="radio" id="cartao" name="payment" value="Cartão">
+                                <label for="cartao" class="payment-option">
+                                    <i class="fas fa-credit-card"></i>
+                                    <span>Cartão</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <div class="footer-buttons">
+                    <button id="back-to-cart-btn" class="btn-secondary">Voltar</button>
+                    <button id="review-order-btn" class="btn-primary">Revisar Pedido</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="review-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Revise seu Pedido</h2>
+                 <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="review-summary">
+                    <h4>Itens do Pedido:</h4>
+                    <div id="review-items"></div>
+                    <hr>
+                    <h4>Endereço de Entrega:</h4>
+                    <p id="review-address-details"></p>
+                    <hr>
+                    <h4>Forma de Pagamento:</h4>
+                    <p id="review-payment-method"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="totals"><h3>Total: <span id="review-total-price">R$ 0,00</span></h3></div>
+                <button id="back-to-address-btn" class="btn-secondary">Editar</button>
+                <button id="submit-order-btn" class="btn-primary">Enviar Pedido</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="submit-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2>Pedido a Caminho!</h2></div>
+            <div class="modal-body">
+                <p>Seu pedido foi registrado! Para finalizar, clique no botão abaixo e envie a mensagem no WhatsApp.</p>
+                <i class="fab fa-whatsapp whatsapp-icon"></i>
+            </div>
+            <div class="modal-footer">
+                <a href="#" id="send-whatsapp-btn" class="btn-primary whatsapp-btn" target="_blank"><i class="fab fa-whatsapp"></i> Enviar pelo WhatsApp</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="customization-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h3 id="custom-product-name">Personalize seu item</h3>
+                    <p id="custom-product-price" class="price">R$ 0,00</p>
+                </div>
+                <button class="close-custom-modal-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="customization-form">
+                    <div class="customization-group">
+                        <div class="customization-group-header"><h4>Açaí e Cremes</h4><span class="badge">Escolha até 5 - Obrigatório</span></div>
+                        <div class="customization-options">
+                            <div class="option-item"><label><input type="checkbox" name="cremes" value="Açaí tradicional"> Açaí tradicional</label></div>
+                            <div class="option-item"><label><input type="checkbox" name="cremes" value="Açaí mesclado com banana"> Açaí mesclado com banana</label></div>
+                            <div class="option-item"><label><input type="checkbox" name="cremes" value="Creme de cupuaçu"> Creme de cupuaçu</label></div>
+                        </div>
+                    </div>
+                    <div class="customization-group">
+                        <div class="customization-group-header"><h4>Acompanhamentos</h4><span class="badge">Escolha até 10</span></div>
+                        <div class="customization-options">
+                            <div class="option-item"><label><input type="checkbox" name="acompanhamentos" value="Amendoim triturado"> Amendoim triturado</label></div>
+                            <div class="option-item"><label><input type="checkbox" name="acompanhamentos" value="Leite em pó"> Leite em pó</label></div>
+                        </div>
+                    </div>
+                    <div class="customization-group">
+                        <div class="customization-group-header"><h4>Adicionais</h4><span class="badge">Itens com custo extra</span></div>
+                        <div class="customization-options">
+                            <div class="option-item"><label><input type="checkbox" name="adicionais" value="Nutella Extra" data-price="3.50"> Nutella Extra</label><span>+ R$ 3,50</span></div>
+                            <div class="option-item"><label><input type="checkbox" name="adicionais" value="Brownie" data-price="4.00"> Pedaços de Brownie</label><span>+ R$ 4,00</span></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <div class="quantity-controls"><button class="quantity-btn" id="decrease-custom-quantity">-</button><span id="custom-quantity">1</span><button class="quantity-btn" id="increase-custom-quantity">+</button></div>
+                <button id="add-custom-to-cart-btn" class="btn-primary">Adicionar ao carrinho</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="toast-notification">Item adicionado ao carrinho</div>
+    <div id="floating-cart-btn">
+        <span id="floating-cart-count">0</span>
+        <i class="fas fa-shopping-bag"></i>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
