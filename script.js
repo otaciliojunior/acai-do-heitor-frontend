@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     console.log("DOM carregado. Iniciando script...");
 
-    // --- FUNÇÕES PARA CARREGAR CONTEÚDO DINÂMICO (MOVIDAS PARA CÁ) ---
+    // --- FUNÇÕES PARA CARREGAR CONTEÚDO DINÂMICO ---
 
     function loadBranding() {
         db.collection('siteContent').doc('branding').get().then(doc => {
@@ -49,16 +49,37 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
+    function loadServices() {
+        for (let i = 1; i <= 3; i++) {
+            const serviceId = `service${i}`;
+            db.collection('siteContent').doc(serviceId).get().then(doc => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    const container = document.getElementById(`service-item-${i}`);
+                    if(container) {
+                        container.querySelector('.service-title').textContent = data.title || '';
+                        container.querySelector('.service-description').textContent = data.description || '';
+                    }
+                }
+            });
+        }
+    }
+
     function loadProducts() {
         const productListContainer = document.querySelector('.product-list');
         if (!productListContainer) return;
 
-        db.collection('products').orderBy('name').get().then(snapshot => {
-            productListContainer.innerHTML = ''; // Limpa a lista estática
+        db.collection('products').orderBy('position').get().then(snapshot => {
+            productListContainer.innerHTML = ''; // Limpa a mensagem de "carregando"
             snapshot.forEach(doc => {
                 const product = doc.data();
                 const productEl = document.createElement('div');
+                
                 productEl.className = 'product-item animate-on-scroll';
+                if (!product.isAvailable) {
+                    productEl.classList.add('unavailable');
+                }
+                
                 productEl.dataset.category = product.category;
                 productEl.dataset.name = product.name;
                 productEl.dataset.price = product.price.toFixed(2);
@@ -80,11 +101,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 productListContainer.appendChild(productEl);
             });
 
-            // Após carregar os produtos, reinicia as lógicas de visualização e animação
             updateProductsView();
             setupScrollAnimations();
         });
     }
+
+    function loadCustomizationOptions() {
+        const containers = {
+            cremes: document.getElementById('custom-cremes'),
+            acompanhamentos: document.getElementById('custom-acompanhamentos'),
+            adicionais: document.getElementById('custom-adicionais')
+        };
+
+        db.collection('customizationOptions').orderBy('position').get().then(snapshot => {
+            // Limpa containers
+            Object.values(containers).forEach(c => {
+                if(c) c.innerHTML = '';
+            });
+
+            snapshot.forEach(doc => {
+                const option = doc.data();
+                if (containers[option.group]) {
+                    const container = containers[option.group];
+                    const optionEl = document.createElement('div');
+                    optionEl.className = 'option-item';
+                    
+                    const priceText = option.price > 0 ? `<span>+ R$ ${option.price.toFixed(2)}</span>` : '';
+                    const disabledAttr = !option.isAvailable ? 'disabled' : '';
+                    const unavailableClass = !option.isAvailable ? 'class="unavailable"' : '';
+                    
+                    optionEl.innerHTML = `
+                        <label ${unavailableClass}>
+                            <input type="checkbox" name="${option.group}" value="${option.name}" data-price="${option.price}" ${disabledAttr}> ${option.name}
+                        </label>
+                        ${priceText}
+                    `;
+                    container.appendChild(optionEl);
+                }
+            });
+        });
+    }
+
 
     // --- 1. CONFIGURAÇÕES ---
     const API_URL = 'https://acai-do-heitor-backend.onrender.com';
@@ -139,7 +196,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 reference: document.getElementById('reference-point').value
             };
             localStorage.setItem('userAddress', JSON.stringify(addressData));
-            console.log("Endereço salvo no LocalStorage:", addressData);
         } catch (error) {
             console.error("Erro ao salvar endereço no LocalStorage:", error);
         }
@@ -154,7 +210,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('customer-phone').value = addressData.phone || '';
                 document.getElementById('delivery-location').value = addressData.location || '';
                 document.getElementById('reference-point').value = addressData.reference || '';
-                console.log("Endereço carregado do LocalStorage:", addressData);
             }
         } catch (error) {
             console.error("Erro ao carregar endereço do LocalStorage:", error);
@@ -180,7 +235,10 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         document.getElementById('custom-product-name').textContent = product.name;
         document.getElementById('customization-form').reset();
-        document.querySelectorAll('#customization-form input[type="checkbox"]').forEach(cb => cb.disabled = false);
+        document.querySelectorAll('#customization-form input[type="checkbox"]').forEach(cb => {
+             if(cb.disabled) return; // Não re-habilita os que vieram desabilitados do DB
+             cb.disabled = false;
+        });
         document.getElementById('custom-quantity').textContent = '1';
         updateCustomPrice();
         openModal('customization-modal');
@@ -206,16 +264,18 @@ document.addEventListener('DOMContentLoaded', () => {
         let limit = (groupName === 'cremes') ? 5 : (groupName === 'acompanhamentos') ? 10 : 0;
         if (limit > 0) {
             const allInGroup = form.querySelectorAll(`input[name="${groupName}"]`);
-            allInGroup.forEach(cb => { cb.disabled = checkedboxes.length >= limit && !cb.checked; });
+            allInGroup.forEach(cb => { 
+                if(cb.disabled && !cb.checked) return; // Não mexe nos que já estão desabilitados por indisponibilidade
+                cb.disabled = checkedboxes.length >= limit && !cb.checked; 
+            });
         }
     }
 
     function addCustomizedItemToCart() {
         const customizations = [];
         const form = document.getElementById('customization-form');
-        form.querySelectorAll('input:checked').forEach(option => {
-            if (option.type === 'checkbox') customizations.push(option.value);
-            else if (option.type === 'radio' && option.value === 'Sim') customizations.push(`Com ${option.name}`);
+        form.querySelectorAll('input[type="checkbox"]:checked').forEach(option => {
+            customizations.push(option.value);
         });
         const finalProduct = {
             name: currentCustomizingProduct.baseName,
@@ -281,7 +341,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => toast.classList.remove('show'), 2500);
     }
 
-    // --- LÓGICA DE ANIMAÇÕES DE SCROLL ---
     function setupScrollAnimations() {
         const observerOptions = {
             root: null,
@@ -292,7 +351,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const observerCallback = (entries, observer) => {
             entries.forEach((entry, index) => {
                 if (entry.isIntersecting) {
-                    // Adiciona um delay para criar o efeito cascata (staggering)
                     entry.target.style.transitionDelay = `${index * 100}ms`;
                     entry.target.classList.add('is-visible');
                     observer.unobserve(entry.target);
@@ -308,22 +366,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleScrollEffects() {
         const heroTexts = document.querySelectorAll('.hero-text');
         const scrollPosition = window.scrollY;
-        // Distância em pixels para o efeito de fade-out ser concluído
         const fadeOutDistance = 400;
 
-        // Se a rolagem estiver dentro da área de efeito
         if (scrollPosition < fadeOutDistance) {
-            // Calcula a opacidade: 1 (totalmente visível) no topo, 0 (invisível) no final da distância
             const opacity = 1 - (scrollPosition / fadeOutDistance);
-            // Calcula o deslocamento para a esquerda
             const translateX = -scrollPosition / 5;
-
             heroTexts.forEach(text => {
                 text.style.opacity = opacity;
                 text.style.transform = `translateX(${translateX}px)`;
             });
         } else {
-            // Garante que o texto permaneça oculto após a rolagem
             heroTexts.forEach(text => {
                 text.style.opacity = 0;
                 text.style.transform = `translateX(${-fadeOutDistance / 5}px)`;
@@ -353,7 +405,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (!response.ok) throw new Error('Falha ao registrar o pedido.');
             const result = await response.json();
-            console.log('Pedido registrado com sucesso no backend!', result);
             return result;
         } catch (error) {
             console.error('Erro ao enviar pedido para o backend:', error);
@@ -378,10 +429,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function initialize() {
-        // --- CONTEÚDO DINÂMICO CARREGADO PRIMEIRO ---
         loadBranding();
         loadHeroContent();
+        loadServices();
         loadProducts();
+        loadCustomizationOptions();
         
         loadAddressData();
 
@@ -390,7 +442,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.addEventListener('click', (e) => {
             const productItem = e.target.closest('.product-item');
             
-            if (productItem) {
+            if (productItem && !productItem.classList.contains('unavailable')) {
                 if (!e.target.closest('.add-btn')) {
                     document.querySelectorAll('.product-item.active').forEach(item => item.classList.remove('active'));
                     productItem.classList.add('active');
@@ -398,8 +450,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (e.target.matches('.add-btn')) {
-                const productData = { name: productItem.dataset.name, price: parseFloat(productItem.dataset.price) };
-                openCustomizationModal(productData);
+                const productItemForModal = e.target.closest('.product-item');
+                if (productItemForModal && !productItemForModal.classList.contains('unavailable')) {
+                    const productData = { name: productItemForModal.dataset.name, price: parseFloat(productItemForModal.dataset.price) };
+                    openCustomizationModal(productData);
+                }
             }
             
             if (e.target.matches('.filter-btn')) {
@@ -444,7 +499,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const form = document.getElementById('address-form');
                 if (form.checkValidity()) {
                     saveAddressData();
-                    
                     document.getElementById('review-items').innerHTML = document.getElementById('cart-items').innerHTML;
                     const location = document.getElementById('delivery-location').value;
                     const reference = document.getElementById('reference-point').value;

@@ -44,20 +44,20 @@
             <p class="section-subtitle animate-on-scroll">SERVIÇOS</p>
             <h2 class="animate-on-scroll">Como são nossos serviços?</h2>
             <div class="services-grid">
-                <div class="service-item animate-on-scroll">
-                    <img src="img/acai1.png" alt="Fácil de pedir">
-                    <h3>Fácil de pedir</h3>
-                    <p>Você só precisa de alguns passos para pedir o seu açaí.</p>
+                <div class="service-item animate-on-scroll" id="service-item-1">
+                    <img src="img/acai1.png" alt="Fácil de pedir" class="service-img">
+                    <h3 class="service-title">Fácil de pedir</h3>
+                    <p class="service-description">Você só precisa de alguns passos para pedir o seu açaí.</p>
                 </div>
-                <div class="service-item animate-on-scroll">
-                    <img src="img/acai3.png" alt="Entrega rápida">
-                    <h3>Entrega rápida</h3>
-                    <p>Nossa entrega é sempre pontual, rápida e segura.</p>
+                <div class="service-item animate-on-scroll" id="service-item-2">
+                    <img src="img/acai3.png" alt="Entrega rápida" class="service-img">
+                    <h3 class="service-title">Entrega rápida</h3>
+                    <p class="service-description">Nossa entrega é sempre pontual, rápida e segura.</p>
                 </div>
-                <div class="service-item animate-on-scroll">
-                    <img src="img/acai4.png" alt="Melhor qualidade">
-                    <h3>Melhor qualidade</h3>
-                    <p>Não só a rapidez na entrega, a qualidade também é o nosso forte.</p>
+                <div class="service-item animate-on-scroll" id="service-item-3">
+                    <img src="img/acai4.png" alt="Melhor qualidade" class="service-img">
+                    <h3 class="service-title">Melhor qualidade</h3>
+                    <p class="service-description">Não só a rapidez na entrega, a qualidade também é o nosso forte.</p>
                 </div>
             </div>
         </div>
@@ -75,7 +75,8 @@
                 </div>
                 
                 <div class="product-list">
-                    </div>
+                    <p id="loading-message">Carregando cardápio...</p>
+                </div>
                 
                 <button id="show-more-btn" class="btn-secondary" style="display: none;">
                     <i class="fas fa-chevron-down"></i> Ver mais
@@ -232,25 +233,18 @@
                 <form id="customization-form">
                     <div class="customization-group">
                         <div class="customization-group-header"><h4>Açaí e Cremes</h4><span class="badge">Escolha até 5 - Obrigatório</span></div>
-                        <div class="customization-options">
-                            <div class="option-item"><label><input type="checkbox" name="cremes" value="Açaí tradicional"> Açaí tradicional</label></div>
-                            <div class="option-item"><label><input type="checkbox" name="cremes" value="Açaí mesclado com banana"> Açaí mesclado com banana</label></div>
-                            <div class="option-item"><label><input type="checkbox" name="cremes" value="Creme de cupuaçu"> Creme de cupuaçu</label></div>
-                        </div>
+                        <div class="customization-options" id="custom-cremes">
+                            </div>
                     </div>
                     <div class="customization-group">
                         <div class="customization-group-header"><h4>Acompanhamentos</h4><span class="badge">Escolha até 10</span></div>
-                        <div class="customization-options">
-                            <div class="option-item"><label><input type="checkbox" name="acompanhamentos" value="Amendoim triturado"> Amendoim triturado</label></div>
-                            <div class="option-item"><label><input type="checkbox" name="acompanhamentos" value="Leite em pó"> Leite em pó</label></div>
-                        </div>
+                        <div class="customization-options" id="custom-acompanhamentos">
+                            </div>
                     </div>
                     <div class="customization-group">
                         <div class="customization-group-header"><h4>Adicionais</h4><span class="badge">Itens com custo extra</span></div>
-                        <div class="customization-options">
-                            <div class="option-item"><label><input type="checkbox" name="adicionais" value="Nutella Extra" data-price="3.50"> Nutella Extra</label><span>+ R$ 3,50</span></div>
-                            <div class="option-item"><label><input type="checkbox" name="adicionais" value="Brownie" data-price="4.00"> Pedaços de Brownie</label><span>+ R$ 4,00</span></div>
-                        </div>
+                        <div class="customization-options" id="custom-adicionais">
+                           </div>
                     </div>
                 </form>
             </div>
