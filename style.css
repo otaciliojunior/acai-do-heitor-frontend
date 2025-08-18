@@ -17,7 +17,7 @@ body { font-family: 'Poppins', sans-serif; background-color: var(--background-co
 
 /* --- 2. HEADER (ATUALIZADO) --- */
 header {
-    background-color: transparent; /* Fundo transparente */
+    background-color: transparent;
     padding: 25px 0;
 }
 header .container {
@@ -32,7 +32,7 @@ header .container {
     gap: 8px;
 }
 .logo img {
-    max-width: 110px; /* Leve ajuste de tamanho */
+    max-width: 110px;
     height: auto;
 }
 .operating-hours {
@@ -198,7 +198,6 @@ main h2 {
     align-items: center;
     cursor: pointer;
     overflow: hidden;
-    transition: all 0.4s ease;
     border: 1px solid var(--border-color);
 }
 .product-info {
@@ -746,4 +745,40 @@ footer h3 {
         grid-column: 2 / 3;
         justify-self: end;
     }
+}
+
+/* --- 11. ESTILOS DE ANIMAÇÃO E UTILITÁRIOS (ATUALIZADO) --- */
+.product-item.hidden {
+    display: none;
+}
+.animate-on-scroll {
+    opacity: 0;
+    transform: translateY(30px) scale(0.98);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.animate-on-scroll.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+.hero-text {
+    /* Garante que as mudanças de opacidade e transform do JS serão suaves */
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
+#show-more-btn {
+    background-color: transparent;
+    border: none;
+    color: var(--dark-gray);
+    font-weight: 600;
+    font-size: 1em;
+    cursor: pointer;
+    display: block;
+    margin: 30px auto 0 auto;
+    padding: 10px;
+    transition: color 0.3s;
+}
+#show-more-btn:hover {
+    color: var(--primary-color);
+}
+#show-more-btn i {
+    margin-right: 8px;
 }

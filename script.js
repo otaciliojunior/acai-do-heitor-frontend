@@ -1,15 +1,132 @@
+// ATENÇÃO: Cole aqui o mesmo objeto firebaseConfig que você usou no admin.js
+const firebaseConfig = {
+    apiKey: "AIzaSyALdTRDfbHFM4Geq5iIGaJ2tFrLi_pqWik",
+    authDomain: "acai-do-heitor-b3054.firebaseapp.com",
+    projectId: "acai-do-heitor-b3054",
+    storageBucket: "acai-do-heitor-b3054.appspot.com",
+    messagingSenderId: "1015413255115",
+    appId: "1:1015413255115:web:0a6a6983e4f073e702e44e",
+    measurementId: "G-1H5JT000KK"
+};
+
+// Inicializa o Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+
 document.addEventListener('DOMContentLoaded', () => {
 
     console.log("DOM carregado. Iniciando script...");
+
+    // --- FUNÇÕES PARA CARREGAR CONTEÚDO DINÂMICO (MOVIDAS PARA CÁ) ---
+
+    function loadBranding() {
+        db.collection('siteContent').doc('branding').get().then(doc => {
+            if (doc.exists && doc.data().logoUrl) {
+                const logoElement = document.getElementById('logo-img');
+                if (logoElement) {
+                    logoElement.src = doc.data().logoUrl;
+                }
+            }
+        });
+    }
+
+    function loadHeroContent() {
+        db.collection('siteContent').doc('heroSection').get()
+            .then(doc => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    const heroTitleElement = document.getElementById('hero-title');
+                    const heroSubtitleElement = document.getElementById('hero-subtitle');
+
+                    if (heroTitleElement && data.title) {
+                        heroTitleElement.innerHTML = data.title;
+                    }
+                    if (heroSubtitleElement && data.subtitle) {
+                        heroSubtitleElement.textContent = data.subtitle;
+                    }
+                }
+            });
+    }
+
+    function loadProducts() {
+        const productListContainer = document.querySelector('.product-list');
+        if (!productListContainer) return;
+
+        db.collection('products').orderBy('name').get().then(snapshot => {
+            productListContainer.innerHTML = ''; // Limpa a lista estática
+            snapshot.forEach(doc => {
+                const product = doc.data();
+                const productEl = document.createElement('div');
+                productEl.className = 'product-item animate-on-scroll';
+                productEl.dataset.category = product.category;
+                productEl.dataset.name = product.name;
+                productEl.dataset.price = product.price.toFixed(2);
+
+                const buttonText = product.category === 'acai' ? 'Personalizar' : 'Adicionar';
+
+                productEl.innerHTML = `
+                    <div class="product-info">
+                        <img src="${product.imageUrl}" alt="${product.name}">
+                        <div class="product-details">
+                            <h3>${product.name}</h3>
+                            <p class="price">R$ ${product.price.toFixed(2)}</p>
+                        </div>
+                    </div>
+                    <div class="product-actions">
+                        <button class="add-btn">${buttonText}</button>
+                    </div>
+                `;
+                productListContainer.appendChild(productEl);
+            });
+
+            // Após carregar os produtos, reinicia as lógicas de visualização e animação
+            updateProductsView();
+            setupScrollAnimations();
+        });
+    }
 
     // --- 1. CONFIGURAÇÕES ---
     const API_URL = 'https://acai-do-heitor-backend.onrender.com';
     const WHATSAPP_NUMBER = "5584981475289";
     const DELIVERY_FEE = 2.00;
+    const PRODUCTS_LIMIT = 6;
 
     // --- ESTADO DO APLICATIVO ---
     let cart = [];
     let currentCustomizingProduct = {};
+
+    // --- FUNÇÃO PARA CONTROLAR A VISIBILIDADE DOS PRODUTOS ---
+    function updateProductsView() {
+        const productList = document.querySelector('.product-list');
+        const showMoreBtn = document.getElementById('show-more-btn');
+        const activeFilter = document.querySelector('.filter-btn.active').dataset.category;
+        
+        const allProducts = Array.from(productList.querySelectorAll('.product-item'));
+        
+        allProducts.forEach(p => p.classList.add('hidden'));
+
+        const visibleProducts = allProducts.filter(p => activeFilter === 'all' || p.dataset.category === activeFilter);
+
+        const isShowingAll = showMoreBtn.dataset.state === 'less';
+        visibleProducts.forEach((product, index) => {
+            if (isShowingAll || index < PRODUCTS_LIMIT) {
+                product.classList.remove('hidden');
+            }
+        });
+
+        if (visibleProducts.length > PRODUCTS_LIMIT) {
+            showMoreBtn.style.display = 'block';
+            if (isShowingAll) {
+                showMoreBtn.innerHTML = `<i class="fas fa-chevron-up"></i> Ver menos`;
+            } else {
+                showMoreBtn.innerHTML = `<i class="fas fa-chevron-down"></i> Ver mais`;
+            }
+        } else {
+            showMoreBtn.style.display = 'none';
+        }
+    }
+
 
     // --- FUNÇÕES DE LÓGICA ---
 
@@ -113,7 +230,6 @@ document.addEventListener('DOMContentLoaded', () => {
         closeModal('customization-modal');
     }
     
-    // ATUALIZADO: A estrutura HTML do item do carrinho foi alterada para corresponder ao novo design.
     function updateCart() {
         const cartItemsContainer = document.getElementById('cart-items');
         cartItemsContainer.innerHTML = '';
@@ -165,6 +281,56 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => toast.classList.remove('show'), 2500);
     }
 
+    // --- LÓGICA DE ANIMAÇÕES DE SCROLL ---
+    function setupScrollAnimations() {
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    // Adiciona um delay para criar o efeito cascata (staggering)
+                    entry.target.style.transitionDelay = `${index * 100}ms`;
+                    entry.target.classList.add('is-visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        };
+
+        const scrollObserver = new IntersectionObserver(observerCallback, observerOptions);
+        const elementsToAnimate = document.querySelectorAll('.animate-on-scroll');
+        elementsToAnimate.forEach(el => scrollObserver.observe(el));
+    }
+
+    function handleScrollEffects() {
+        const heroTexts = document.querySelectorAll('.hero-text');
+        const scrollPosition = window.scrollY;
+        // Distância em pixels para o efeito de fade-out ser concluído
+        const fadeOutDistance = 400;
+
+        // Se a rolagem estiver dentro da área de efeito
+        if (scrollPosition < fadeOutDistance) {
+            // Calcula a opacidade: 1 (totalmente visível) no topo, 0 (invisível) no final da distância
+            const opacity = 1 - (scrollPosition / fadeOutDistance);
+            // Calcula o deslocamento para a esquerda
+            const translateX = -scrollPosition / 5;
+
+            heroTexts.forEach(text => {
+                text.style.opacity = opacity;
+                text.style.transform = `translateX(${translateX}px)`;
+            });
+        } else {
+            // Garante que o texto permaneça oculto após a rolagem
+            heroTexts.forEach(text => {
+                text.style.opacity = 0;
+                text.style.transform = `translateX(${-fadeOutDistance / 5}px)`;
+            });
+        }
+    }
+
     async function submitOrderToBackend() {
         const customerData = {
             name: document.getElementById('customer-name').value,
@@ -212,8 +378,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function initialize() {
+        // --- CONTEÚDO DINÂMICO CARREGADO PRIMEIRO ---
+        loadBranding();
+        loadHeroContent();
+        loadProducts();
+        
         loadAddressData();
 
+        window.addEventListener('scroll', handleScrollEffects);
+        
         document.body.addEventListener('click', (e) => {
             const productItem = e.target.closest('.product-item');
             
@@ -228,14 +401,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const productData = { name: productItem.dataset.name, price: parseFloat(productItem.dataset.price) };
                 openCustomizationModal(productData);
             }
-
+            
             if (e.target.matches('.filter-btn')) {
                 document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
                 e.target.classList.add('active');
-                const category = e.target.dataset.category;
-                document.querySelectorAll('.product-item').forEach(card => {
-                    card.style.display = (category === 'all' || card.dataset.category === category) ? 'flex' : 'none';
-                });
+                updateProductsView();
             }
 
             if (e.target.closest('#floating-cart-btn')) openModal('cart-modal');
@@ -243,6 +413,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const modal = e.target.closest('.modal');
                 if (modal) closeModal(modal.id);
             }
+        });
+
+        document.getElementById('show-more-btn').addEventListener('click', (e) => {
+            const currentState = e.target.dataset.state || 'more';
+            e.target.dataset.state = currentState === 'more' ? 'less' : 'more';
+            updateProductsView();
         });
 
         document.getElementById('cart-modal').addEventListener('click', (e) => {
@@ -319,6 +495,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         updateCart();
+        
         console.log("Inicialização de eventos concluída.");
     }
 

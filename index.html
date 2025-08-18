@@ -16,7 +16,7 @@
     <div class="container">
         <div class="brand-info">
             <div class="logo">
-                <img src="img/logo.png" alt="Açaí do Heitor Logo">
+                <img src="img/logo.png" alt="Açaí do Heitor Logo" id="logo-img">
             </div>
             <div class="operating-hours">
                 <span class="status open">Aberto agora</span>
@@ -32,29 +32,29 @@
     <section id="hero">
         <div class="container">
             <div class="hero-content">
-                <h1>Escolha seu<br>açaí <span class="highlight">favorito.</span></h1>
-                <p>Aproveite nosso cardápio! Escolha o que desejar e receba em sua casa de forma rápida e segura.</p>
-                <a href="#menu" class="btn-primary" id="view-menu-btn">Ver cardápio</a>
+                <h1 class="hero-text" id="hero-title">Escolha seu<br>açaí <span class="highlight">favorito.</span></h1>
+                <p class="animate-on-scroll hero-text" id="hero-subtitle">Aproveite nosso cardápio! Escolha o que desejar e receba em sua casa de forma rápida e segura.</p>
+                <a href="#menu" class="btn-primary animate-on-scroll" id="view-menu-btn">Ver cardápio</a>
             </div>
         </div>
     </section>
 
     <section id="services">
         <div class="container">
-            <p class="section-subtitle">SERVIÇOS</p>
-            <h2>Como são nossos serviços?</h2>
+            <p class="section-subtitle animate-on-scroll">SERVIÇOS</p>
+            <h2 class="animate-on-scroll">Como são nossos serviços?</h2>
             <div class="services-grid">
-                <div class="service-item">
+                <div class="service-item animate-on-scroll">
                     <img src="img/acai1.png" alt="Fácil de pedir">
                     <h3>Fácil de pedir</h3>
                     <p>Você só precisa de alguns passos para pedir o seu açaí.</p>
                 </div>
-                <div class="service-item">
+                <div class="service-item animate-on-scroll">
                     <img src="img/acai3.png" alt="Entrega rápida">
                     <h3>Entrega rápida</h3>
                     <p>Nossa entrega é sempre pontual, rápida e segura.</p>
                 </div>
-                <div class="service-item">
+                <div class="service-item animate-on-scroll">
                     <img src="img/acai4.png" alt="Melhor qualidade">
                     <h3>Melhor qualidade</h3>
                     <p>Não só a rapidez na entrega, a qualidade também é o nosso forte.</p>
@@ -66,52 +66,20 @@
     <main id="menu">
         <div class="container">
             <section>
-                <p class="section-subtitle">CARDÁPIO</p>
-                <h2>Conheça o nosso cardápio</h2>
-                <div class="category-filters">
+                <p class="section-subtitle animate-on-scroll">CARDÁPIO</p>
+                <h2 class="animate-on-scroll">Conheça o nosso cardápio</h2>
+                <div class="category-filters animate-on-scroll">
                     <button class="filter-btn active" data-category="all"><i class="fas fa-utensils"></i> Todos</button>
                     <button class="filter-btn" data-category="acai"><i class="fas fa-ice-cream"></i> Açaí</button>
                     <button class="filter-btn" data-category="petiscos"><i class="fas fa-drumstick-bite"></i> Petiscos</button>
                 </div>
                 
                 <div class="product-list">
-                    <div class="product-item" data-category="acai" data-name="Açaí 500ML" data-price="18.00">
-                        <div class="product-info">
-                            <img src="img/img1.png" alt="Açaí 500ml">
-                            <div class="product-details">
-                                <h3>Açaí 500ML</h3>
-                                <p class="price">R$ 18,00</p>
-                            </div>
-                        </div>
-                        <div class="product-actions">
-                            <button class="add-btn">Personalizar</button>
-                        </div>
                     </div>
-                    <div class="product-item" data-category="acai" data-name="Açaí 350ML" data-price="12.00">
-                        <div class="product-info">
-                            <img src="img/img2.png" alt="Açaí 350ml">
-                            <div class="product-details">
-                                <h3>Açaí 350ML</h3>
-                                <p class="price">R$ 12,00</p>
-                            </div>
-                        </div>
-                         <div class="product-actions">
-                            <button class="add-btn">Personalizar</button>
-                        </div>
-                    </div>
-                    <div class="product-item" data-category="petiscos" data-name="Batata Frita com Cheddar" data-price="25.00">
-                        <div class="product-info">
-                            <img src="https://comofazer.online/wp-content/uploads/2019/12/batata-frita-light-imagem-ilustrativa-da-receita_1436341.jpg" alt="Batata Frita">
-                            <div class="product-details">
-                                <h3>Batata Frita com Cheddar</h3>
-                                <p class="price">R$ 25,00</p>
-                            </div>
-                        </div>
-                         <div class="product-actions">
-                            <button class="add-btn">Adicionar</button>
-                        </div>
-                    </div>
-                </div>
+                
+                <button id="show-more-btn" class="btn-secondary" style="display: none;">
+                    <i class="fas fa-chevron-down"></i> Ver mais
+                </button>
             </section>
         </div>
     </main>
@@ -298,6 +266,9 @@
         <span id="floating-cart-count">0</span>
         <i class="fas fa-shopping-bag"></i>
     </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
     
     <script src="script.js"></script>
 </body>
