@@ -8,6 +8,7 @@
     --card-background: #FFFFFF;
     --border-color: #EAEAEA;
     --success-color: #28a745;
+    --danger-color: #dc3545;
     --dark-button-color: #1a1a1a;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -40,41 +41,50 @@ header .container {
     align-items: center;
     gap: 10px;
     font-size: 0.9rem;
-    color: #555;
     font-weight: 500;
 }
-.operating-hours .status {
+.status-badge {
     font-weight: 600;
     padding: 4px 12px;
     border-radius: 50px;
     font-size: 0.8rem;
+    display: inline-block;
 }
-.operating-hours .status.open {
+.status-badge.open {
     background-color: #e8f5e9;
     color: #388e3c;
 }
-.menu-icon {
-    font-size: 1.8rem;
-    cursor: pointer;
-    font-weight: 700;
+.status-badge.closed {
+    background-color: #fbe9e7;
+    color: var(--danger-color);
 }
-
+.status-text {
+    color: #555;
+}
+.details-link {
+    color: var(--text-color-dark);
+    font-weight: 600;
+    text-decoration: none;
+}
+.details-link:hover {
+    color: var(--primary-color);
+}
 
 /* --- SEÇÃO HERO (ATUALIZADA) --- */
 #hero {
-    background-color: transparent; /* Fundo transparente */
+    background-color: transparent;
     padding: 40px 0 80px 0;
     text-align: left;
 }
 .hero-content h1 {
-    font-size: 3.8rem; /* Título maior e mais impactante */
+    font-size: 3.8rem;
     font-weight: 800;
     line-height: 1.25;
     margin-bottom: 20px;
 }
 .hero-content .highlight {
     color: var(--primary-color);
-    font-weight: 500; /* Destaque com peso mais leve */
+    font-weight: 500;
 }
 .hero-content p {
     font-size: 1.1rem;
@@ -85,7 +95,7 @@ header .container {
 }
 #hero .btn-primary {
     width: auto;
-    padding: 18px 45px; /* Botão maior */
+    padding: 18px 45px;
     text-decoration: none;
     font-size: 1.1rem;
     box-shadow: 0 8px 20px -5px rgba(93, 61, 141, 0.4);
@@ -553,6 +563,29 @@ footer h3 {
     font-family: 'Poppins', sans-serif;
     font-size: 1rem;
 }
+.radio-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.radio-option-wrapper input[type="radio"] {
+    display: none;
+}
+.radio-label-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    font-weight: 500;
+}
+.radio-option-wrapper input[type="radio"]:checked + .radio-label-btn {
+    background-color: #f3eff9;
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    font-weight: 600;
+}
 
 /* --- Novos estilos para as opções de pagamento --- */
 .payment-options {
@@ -688,6 +721,26 @@ footer h3 {
     color: #aaa;
 }
 
+/* Modal de Horários */
+.hours-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.hours-table td {
+    padding: 12px 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+.hours-table tr:last-child td {
+    border-bottom: none;
+}
+.hours-table td:first-child {
+    font-weight: 600;
+}
+.hours-table td:last-child {
+    text-align: right;
+    font-weight: 500;
+}
+
 /* --- 9. ELEMENTOS FLUTUANTES --- */
 #floating-cart-btn {
     position: fixed;
@@ -747,6 +800,10 @@ footer h3 {
     visibility: visible;
     transform: translateY(0);
 }
+#toast-notification.info {
+    background-color: #17a2b8;
+}
+
 
 /* --- 10. AJUSTES PARA MOBILE --- */
 @media (max-width: 768px) {

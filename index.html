@@ -18,10 +18,8 @@
             <div class="logo">
                 <img src="img/logo.png" alt="Açaí do Heitor Logo" id="logo-img">
             </div>
-            <div class="operating-hours">
-                <span class="status open">Aberto agora</span>
-                <span>Ter - Dom: 18:00 às 22:00</span>
-            </div>
+            <div class="operating-hours" id="operating-hours-container">
+                </div>
         </div>
         <div class="menu-icon">
             <i class="fas fa-bars"></i>
@@ -141,8 +139,11 @@
                 <form id="address-form" novalidate>
                     <div class="form-group"><label for="customer-name">Seu Nome:</label><input type="text" id="customer-name" placeholder="Digite seu nome completo" required></div>
                     <div class="form-group"><label for="customer-phone">Seu WhatsApp:</label><input type="tel" id="customer-phone" placeholder="DDD + Número (só dígitos)" required></div>
-                    <div class="form-group"><label for="delivery-location">Local de Entrega:</label><select id="delivery-location" required><option value="">Selecione um bairro</option><option value="Centro">Centro</option><option value="Vila Nova">Vila Nova</option><option value="Jardim das Flores">Jardim das Flores</option></select></div>
-                    <div class="form-group"><label for="reference-point">Ponto de Referência:</label><textarea id="reference-point" rows="3" placeholder="Ex: Próximo à padaria, casa azul..."></textarea></div>
+                    
+                    <div class="form-group"><label for="street-name">Nome da Rua:</label><input type="text" id="street-name" placeholder="Ex: Rua das Flores" required></div>
+                    <div class="form-group"><label for="house-number">Número da Casa:</label><input type="text" id="house-number" placeholder="Ex: 123" required></div>
+                    
+                    <div class="form-group"><label for="reference-point">Ponto de Referência (opcional):</label><textarea id="reference-point" rows="3" placeholder="Ex: Próximo à padaria, casa azul..."></textarea></div>
                     
                     <div class="form-group">
                         <label>Forma de Pagamento:</label>
@@ -170,6 +171,27 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <div id="change-section" style="display: none;">
+                        <div class="form-group">
+                            <label>Precisa de troco?</label>
+                            <div class="radio-group">
+                                <div class="radio-option-wrapper">
+                                    <input type="radio" id="change-no" name="needs-change" value="nao" checked>
+                                    <label for="change-no" class="radio-label-btn">Não</label>
+                                </div>
+                                <div class="radio-option-wrapper">
+                                    <input type="radio" id="change-yes" name="needs-change" value="sim">
+                                    <label for="change-yes" class="radio-label-btn">Sim</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group" id="change-amount-group" style="display: none;">
+                            <label for="change-amount">Troco para quanto?</label>
+                            <input type="number" id="change-amount" placeholder="50">
+                        </div>
+                    </div>
+
                 </form>
             </div>
             <div class="modal-footer">
@@ -232,19 +254,28 @@
             <div class="modal-body">
                 <form id="customization-form">
                     <div class="customization-group">
-                        <div class="customization-group-header"><h4>Açaí e Cremes</h4><span class="badge">Escolha até 5 - Obrigatório</span></div>
+                        <div class="customization-group-header">
+                            <h4>Açaí e Cremes</h4>
+                            <span class="badge" id="cremes-badge">Escolha até 5 - Obrigatório</span>
+                        </div>
                         <div class="customization-options" id="custom-cremes">
-                            </div>
+                        </div>
                     </div>
                     <div class="customization-group">
-                        <div class="customization-group-header"><h4>Acompanhamentos</h4><span class="badge">Escolha até 10</span></div>
+                        <div class="customization-group-header">
+                            <h4>Acompanhamentos</h4>
+                            <span class="badge" id="acompanhamentos-badge">Escolha até 10</span>
+                        </div>
                         <div class="customization-options" id="custom-acompanhamentos">
-                            </div>
+                        </div>
                     </div>
                     <div class="customization-group">
-                        <div class="customization-group-header"><h4>Adicionais</h4><span class="badge">Itens com custo extra</span></div>
+                        <div class="customization-group-header">
+                            <h4>Adicionais</h4>
+                            <span class="badge">Itens com custo extra</span>
+                        </div>
                         <div class="customization-options" id="custom-adicionais">
-                           </div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -252,6 +283,17 @@
                 <div class="quantity-controls"><button class="quantity-btn" id="decrease-custom-quantity">-</button><span id="custom-quantity">1</span><button class="quantity-btn" id="increase-custom-quantity">+</button></div>
                 <button id="add-custom-to-cart-btn" class="btn-primary">Adicionar ao carrinho</button>
             </div>
+        </div>
+    </div>
+
+    <div id="hours-details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Horário de Funcionamento</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body" id="hours-details-content">
+                </div>
         </div>
     </div>
     
