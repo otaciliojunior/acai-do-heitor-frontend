@@ -98,6 +98,58 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- INÍCIO DA NOVA IMPLEMENTAÇÃO: PERSISTÊNCIA DE DADOS DO USUÁRIO ---
+    
+    /**
+     * Salva as informações de contato e endereço do usuário no localStorage.
+     */
+    function saveUserInfo() {
+        try {
+            const form = document.getElementById('address-form');
+            const userInfo = {
+                name: form.elements['customer-name'].value,
+                phone: form.elements['customer-phone'].value,
+                street: form.elements['street-name'].value,
+                number: form.elements['house-number'].value,
+                reference: form.elements['reference-point'].value
+            };
+            // Salva os dados como uma string JSON no localStorage
+            localStorage.setItem('userInfo', JSON.stringify(userInfo));
+        } catch (error) {
+            console.error("Erro ao salvar dados do usuário:", error);
+        }
+    }
+
+    /**
+     * Carrega as informações do usuário do localStorage e preenche o formulário.
+     */
+    function loadUserInfo() {
+        try {
+            const savedUserJSON = localStorage.getItem('userInfo');
+            if (savedUserJSON) {
+                const userInfo = JSON.parse(savedUserJSON);
+                const form = document.getElementById('address-form');
+
+                if (form && userInfo) {
+                    // Preenche cada campo do formulário com os dados salvos
+                    form.elements['customer-name'].value = userInfo.name || '';
+                    form.elements['customer-phone'].value = userInfo.phone || '';
+                    form.elements['street-name'].value = userInfo.street || '';
+                    form.elements['house-number'].value = userInfo.number || '';
+                    form.elements['reference-point'].value = userInfo.reference || '';
+                    console.log("Dados do usuário recuperados com sucesso.");
+                }
+            }
+        } catch (error) {
+            console.error("Erro ao carregar dados do usuário:", error);
+            // Limpa dados inválidos se ocorrer um erro
+            localStorage.removeItem('userInfo');
+        }
+    }
+
+    // --- FIM DA NOVA IMPLEMENTAÇÃO ---
+
+
     // --- FUNÇÕES DE CONTEÚDO DINÂMICO ---
 
     function loadBranding() {
@@ -536,10 +588,15 @@ document.addEventListener('DOMContentLoaded', () => {
         loadProducts();
         loadCustomizationOptions();
         loadOrderState(); 
+        loadUserInfo(); // <-- MODIFICAÇÃO: Carrega os dados do usuário ao iniciar
 
         window.addEventListener('scroll', handleScrollEffects);
         
-        document.getElementById('address-form').addEventListener('input', saveOrderState);
+        // <-- MODIFICAÇÃO: Listener de evento para salvar o estado do pedido E os dados do usuário
+        document.getElementById('address-form').addEventListener('input', () => {
+            saveOrderState(); // Salva o carrinho e o endereço do pedido atual
+            saveUserInfo();   // Salva os dados de contato/endereço para futuras visitas
+        });
 
         document.querySelectorAll('input[name="payment"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
