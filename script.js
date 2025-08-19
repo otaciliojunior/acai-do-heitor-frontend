@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 1. CONFIGURAÇÕES ---
     const API_URL = 'https://acai-do-heitor-backend.onrender.com';
-    const WHATSAPP_NUMBER = "5584981475289";
+    const WHATSAPP_NUMBER = "558491393356";
     const DELIVERY_FEE = 2.00;
     const PRODUCTS_LIMIT = 6;
     const ORDER_EXPIRATION_MINUTES = 20;
