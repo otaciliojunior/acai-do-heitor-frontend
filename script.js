@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 1. CONFIGURAÇÕES ---
     const API_URL = 'https://acai-do-heitor-backend.onrender.com';
-    const WHATSAPP_NUMBER = "558491393356";
+    const WHATSAPP_NUMBER = "5584981475289";
     const DELIVERY_FEE = 2.00;
     const PRODUCTS_LIMIT = 6;
     const ORDER_EXPIRATION_MINUTES = 20;
@@ -308,11 +308,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const buttonText = product.category === 'acai' ? 'Personalizar' : 'Adicionar';
+
+                // **INÍCIO DA ALTERAÇÃO**
+                // Verifica se a descrição existe e cria o HTML para ela
+                const descriptionHTML = product.description ? `<p class="product-description">${product.description}</p>` : '';
+                // **FIM DA ALTERAÇÃO**
+
                 productEl.innerHTML = `
                     <div class="product-info">
                         <img src="${product.imageUrl}" alt="${product.name}">
                         <div class="product-details">
                             <h3>${product.name}</h3>
+                            ${descriptionHTML} 
                             <p class="price">R$ ${product.price.toFixed(2)}</p>
                         </div>
                     </div>

@@ -67,9 +67,16 @@
                 <p class="section-subtitle animate-on-scroll">CARDÁPIO</p>
                 <h2 class="animate-on-scroll">Conheça o nosso cardápio</h2>
                 <div class="category-filters animate-on-scroll">
-                    <button class="filter-btn active" data-category="all"><i class="fas fa-utensils"></i> Todos</button>
-                    <button class="filter-btn" data-category="acai"><i class="fas fa-ice-cream"></i> Açaí</button>
-                    <button class="filter-btn" data-category="petiscos"><i class="fas fa-drumstick-bite"></i> Petiscos</button>
+                    <div class="category-filters animate-on-scroll">
+            <button class="filter-btn active" data-category="all"><i class="fas fa-utensils"></i> Todos</button>
+            <button class="filter-btn" data-category="acai"><i class="fas fa-ice-cream"></i> Açaí</button>
+            <button class="filter-btn" data-category="sanduiches"><i class="fas fa-hamburger"></i> Sanduíches</button>
+            <button class="filter-btn" data-category="cachorros_quentes"><i class="fas fa-hotdog"></i> Cachorros-quentes</button>
+            <button class="filter-btn" data-category="pasteis"><i class="fas fa-stroopwafel"></i> Pastéis</button>
+            <button class="filter-btn" data-category="petiscos"><i class="fas fa-drumstick-bite"></i> Petiscos</button>
+            <button class="filter-btn" data-category="batata_frita"><i class="fas fa-french-fries"></i> Batata Frita</button>
+            <button class="filter-btn" data-category="bebidas"><i class="fas fa-cocktail"></i> Bebidas</button>
+            </div>
                 </div>
                 
                 <div class="product-list">
@@ -137,13 +144,37 @@
             </div>
             <div class="modal-body">
                 <form id="address-form" novalidate>
+                    <div class="form-group">
+                        <label>Modalidade:</label>
+                        <div class="radio-group">
+                            <div class="radio-option-wrapper">
+                                <input type="radio" id="delivery-mode" name="delivery-type" value="delivery" checked>
+                                <label for="delivery-mode" class="radio-label-btn"><i class="fas fa-motorcycle"></i> Delivery</label>
+                            </div>
+                            <div class="radio-option-wrapper">
+                                <input type="radio" id="pickup-mode" name="delivery-type" value="pickup">
+                                <label for="pickup-mode" class="radio-label-btn"><i class="fas fa-store"></i> Retirar no Local</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="address-fields">
+                        <div class="form-group">
+                            <label for="street-name">Nome da Rua:</label>
+                            <input type="text" id="street-name" placeholder="Ex: Rua das Flores" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="house-number">Número da Casa:</label>
+                            <input type="text" id="house-number" placeholder="Ex: 123" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reference-point">Ponto de Referência (opcional):</label>
+                            <textarea id="reference-point" rows="3" placeholder="Ex: Próximo à padaria, casa azul..."></textarea>
+                        </div>
+                    </div>
+                    
                     <div class="form-group"><label for="customer-name">Seu Nome:</label><input type="text" id="customer-name" placeholder="Digite seu nome completo" required></div>
                     <div class="form-group"><label for="customer-phone">Seu WhatsApp:</label><input type="tel" id="customer-phone" placeholder="DDD + Número (só dígitos)" required></div>
-                    
-                    <div class="form-group"><label for="street-name">Nome da Rua:</label><input type="text" id="street-name" placeholder="Ex: Rua das Flores" required></div>
-                    <div class="form-group"><label for="house-number">Número da Casa:</label><input type="text" id="house-number" placeholder="Ex: 123" required></div>
-                    
-                    <div class="form-group"><label for="reference-point">Ponto de Referência (opcional):</label><textarea id="reference-point" rows="3" placeholder="Ex: Próximo à padaria, casa azul..."></textarea></div>
                     
                     <div class="form-group">
                         <label>Forma de Pagamento:</label>
@@ -195,10 +226,8 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <div class="footer-buttons">
-                    <button id="back-to-cart-btn" class="btn-secondary">Voltar</button>
-                    <button id="review-order-btn" class="btn-primary">Revisar Pedido</button>
-                </div>
+                <button id="back-to-cart-btn" class="btn-secondary">Voltar</button>
+                <button id="review-order-btn" class="btn-primary">Revisar Pedido</button>
             </div>
         </div>
     </div>
@@ -231,14 +260,28 @@
 
     <div id="submit-modal" class="modal">
         <div class="modal-content">
-            <div class="modal-header"><h2>Pedido a Caminho!</h2></div>
-            <div class="modal-body">
-                <p>Seu pedido foi registrado! Para finalizar, clique no botão abaixo e envie a mensagem no WhatsApp.</p>
-                <i class="fab fa-whatsapp whatsapp-icon"></i>
+            <span class="close-btn">&times;</span>
+            <h2>Pedido a caminho!</h2>
+            <p>Seu pedido foi enviado para o nosso WhatsApp. Fique de olho no seu celular para atualizações!</p>
+            <a href="#" id="send-whatsapp-btn" target="_blank" class="btn-primary whatsapp-btn"><i class="fab fa-whatsapp"></i> Abrir no WhatsApp</a>
+    
+            <div id="feedback-section">
+                <hr>
+                <h4>O que você achou da experiência de compra?</h4>
+                <div class="star-rating">
+                    <i class="fas fa-star" data-value="1"></i>
+                    <i class="fas fa-star" data-value="2"></i>
+                    <i class="fas fa-star" data-value="3"></i>
+                    <i class="fas fa-star" data-value="4"></i>
+                    <i class="fas fa-star" data-value="5"></i>
+                </div>
+                <textarea id="feedback-comment" placeholder="Deixe um comentário (opcional)"></textarea>
+                <button id="submit-feedback-btn" class="btn-primary">Enviar Avaliação</button>
             </div>
-            <div class="modal-footer">
-                <a href="#" id="send-whatsapp-btn" class="btn-primary whatsapp-btn" target="_blank"><i class="fab fa-whatsapp"></i> Enviar pelo WhatsApp</a>
+            <div id="feedback-thanks" style="display: none;">
+                <p><strong>Obrigado pelo seu feedback!</strong></p>
             </div>
+    
         </div>
     </div>
 

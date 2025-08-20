@@ -256,6 +256,15 @@ main h2 {
     font-weight: 600;
     margin: 0;
 }
+/* **INÍCIO DA ALTERAÇÃO** */
+.product-details .product-description {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 4px;
+    margin-bottom: 6px;
+    line-height: 1.4;
+}
+/* **FIM DA ALTERAÇÃO** */
 .product-details .price {
     font-size: 1rem;
     font-weight: 600;
@@ -461,6 +470,7 @@ footer h3 {
     padding: 20px;
     margin-top: auto;
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: 10px;
@@ -572,7 +582,8 @@ footer h3 {
     display: none;
 }
 .radio-label-btn {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     padding: 10px 20px;
     border: 2px solid var(--border-color);
     border-radius: 10px;
@@ -580,6 +591,13 @@ footer h3 {
     transition: all 0.2s ease-in-out;
     font-weight: 500;
 }
+.radio-label-btn i {
+    margin-right: 8px;
+}
+#address-fields.hidden {
+    display: none;
+}
+
 .radio-option-wrapper input[type="radio"]:checked + .radio-label-btn {
     background-color: #f3eff9;
     border-color: var(--primary-color);
@@ -644,22 +662,16 @@ footer h3 {
     font-weight: 600;
     margin-bottom: 10px;
 }
-#submit-modal .modal-body {
-    text-align: center;
-}
 #submit-modal .modal-content {
+    text-align: center;
     padding: 20px;
-}
-.whatsapp-icon {
-    font-size: 5rem;
-    color: var(--success-color);
-    margin: 20px 0;
 }
 .whatsapp-btn {
     width: 100%;
     text-align: center;
-    display: block;
+    display: inline-block;
     text-decoration: none;
+    margin-bottom: 15px;
 }
 .whatsapp-btn i {
     margin-right: 8px;
@@ -803,6 +815,9 @@ footer h3 {
 #toast-notification.info {
     background-color: #17a2b8;
 }
+#toast-notification.error {
+    background-color: var(--danger-color);
+}
 
 
 /* --- 10. AJUSTES PARA MOBILE --- */
@@ -840,6 +855,15 @@ footer h3 {
         grid-column: 2 / 3;
         justify-self: end;
     }
+    .modal-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .modal-footer .btn-primary,
+    .modal-footer .btn-secondary {
+        width: 100%;
+        text-align: center;
+    }
 }
 
 /* --- 11. ESTILOS DE ANIMAÇÃO E UTILITÁRIOS (ATUALIZADO) --- */
@@ -862,7 +886,7 @@ footer h3 {
 #show-more-btn {
     background-color: transparent;
     border: none;
-    color: var(--dark-gray);
+    color: #555;
     font-weight: 600;
     font-size: 1em;
     cursor: pointer;
@@ -876,4 +900,50 @@ footer h3 {
 }
 #show-more-btn i {
     margin-right: 8px;
+}
+
+/* --- Estilos da Pesquisa de Satisfação --- */
+#feedback-section {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    text-align: center;
+}
+
+.star-rating {
+    font-size: 2rem;
+    color: #ccc;
+    cursor: pointer;
+    margin-bottom: 15px;
+}
+
+.star-rating .fas.hover,
+.star-rating .fas.selected {
+    color: #ffc107; /* Amarelo da estrela */
+}
+
+#feedback-comment {
+    width: 100%;
+    min-height: 80px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    font-family: inherit;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    resize: vertical;
+}
+
+#submit-feedback-btn {
+    width: 100%;
+}
+
+#submit-feedback-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+#feedback-thanks {
+    margin-top: 20px;
+    text-align: center;
 }
