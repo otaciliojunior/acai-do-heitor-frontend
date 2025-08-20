@@ -100,9 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INÍCIO DA NOVA IMPLEMENTAÇÃO: PERSISTÊNCIA DE DADOS DO USUÁRIO ---
     
-    /**
-     * Salva as informações de contato e endereço do usuário no localStorage.
-     */
     function saveUserInfo() {
         try {
             const form = document.getElementById('address-form');
@@ -113,16 +110,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 number: form.elements['house-number'].value,
                 reference: form.elements['reference-point'].value
             };
-            // Salva os dados como uma string JSON no localStorage
             localStorage.setItem('userInfo', JSON.stringify(userInfo));
         } catch (error) {
             console.error("Erro ao salvar dados do usuário:", error);
         }
     }
 
-    /**
-     * Carrega as informações do usuário do localStorage e preenche o formulário.
-     */
     function loadUserInfo() {
         try {
             const savedUserJSON = localStorage.getItem('userInfo');
@@ -131,7 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const form = document.getElementById('address-form');
 
                 if (form && userInfo) {
-                    // Preenche cada campo do formulário com os dados salvos
                     form.elements['customer-name'].value = userInfo.name || '';
                     form.elements['customer-phone'].value = userInfo.phone || '';
                     form.elements['street-name'].value = userInfo.street || '';
@@ -142,7 +134,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error("Erro ao carregar dados do usuário:", error);
-            // Limpa dados inválidos se ocorrer um erro
             localStorage.removeItem('userInfo');
         }
     }
@@ -167,7 +158,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     const operatingHours = doc.data();
                     
-                    // Nomes de dias padronizados (sem acentos) para corresponder ao Firebase
                     const daysOrder = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
                     
                     const now = new Date();
@@ -229,7 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusHTML += ` • <a href="#" id="details-link" class="details-link">Detalhes</a>`;
                     container.innerHTML = statusHTML;
                     
-                    // Corrige a geração da tabela no modal para usar as chaves corretas
                     const detailsContent = document.getElementById('hours-details-content');
                     let tableHTML = '<table class="hours-table">';
                     const displayOrder = [
@@ -301,6 +290,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 productEl.dataset.category = product.category;
                 productEl.dataset.name = product.name;
                 productEl.dataset.price = product.price.toFixed(2);
+                
+                if (product.description) {
+                    productEl.dataset.description = product.description;
+                }
 
                 if (product.category === 'acai') {
                     productEl.dataset.creamLimit = product.creamLimit || 0;
@@ -308,11 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const buttonText = product.category === 'acai' ? 'Personalizar' : 'Adicionar';
-
-                // **INÍCIO DA ALTERAÇÃO**
-                // Verifica se a descrição existe e cria o HTML para ela
                 const descriptionHTML = product.description ? `<p class="product-description">${product.description}</p>` : '';
-                // **FIM DA ALTERAÇÃO**
 
                 productEl.innerHTML = `
                     <div class="product-info">
@@ -461,11 +450,16 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             cart.forEach((item, index) => {
                 subtotal += item.price * item.quantity;
+                
+                // INÍCIO DA ALTERAÇÃO: Adiciona a descrição (se houver) ao HTML do carrinho
+                const descriptionHTML = item.description ? `<div class="cart-item-description">${item.description}</div>` : '';
                 const customizationsHTML = item.customizations.length > 0 ? `<div class="cart-item-customizations">${item.customizations.join(', ')}</div>` : '';
+                
                 cartItemsContainer.innerHTML += `
                     <div class="cart-item" data-index="${index}">
                         <div class="cart-item-details">
                             <span class="cart-item-name">${item.name}</span>
+                            ${descriptionHTML}
                             ${customizationsHTML}
                         </div>
                         <div class="quantity-controls">
@@ -530,9 +524,22 @@ document.addEventListener('DOMContentLoaded', () => {
     function generateWhatsAppMessage() {
         const name = document.getElementById('customer-name').value;
         const phone = document.getElementById('customer-phone').value;
-        const street = document.getElementById('street-name').value;
-        const number = document.getElementById('house-number').value;
-        const reference = document.getElementById('reference-point').value;
+        const deliveryMode = document.querySelector('input[name="delivery-type"]:checked').value;
+        
+        let addressInfo = '';
+        if (deliveryMode === 'delivery') {
+            const street = document.getElementById('street-name').value;
+            const number = document.getElementById('house-number').value;
+            const reference = document.getElementById('reference-point').value;
+            addressInfo += `📍 *Endereço de Entrega:*\n`;
+            addressInfo += `${street}, ${number}\n`;
+            if (reference) {
+                addressInfo += `_${reference}_\n`;
+            }
+        } else {
+            addressInfo = `🛵 *Retirar no Local*\n`;
+        }
+
         const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
         let paymentInfo = paymentMethod;
 
@@ -555,17 +562,18 @@ document.addEventListener('DOMContentLoaded', () => {
         message += `👤 *Cliente:*\n${name}\n\n`;
         message += `📞 *WhatsApp:*\n+${phone.replace(/\D/g, '')}\n\n`;
         
-        message += `📍 *Endereço de Entrega:*\n`;
-        message += `${street}, ${number}\n`;
-        if (reference) {
-            message += `_${reference}_\n`;
-        }
+        message += addressInfo;
         
         message += `\n------------------------------------\n`;
         message += `🍨 *Itens do pedido:*\n`;
         
         cart.forEach(item => {
             message += `\n✅ *${item.quantity}x ${item.name}* – R$${(item.price * item.quantity).toFixed(2)}\n`;
+            
+            if (item.description) {
+                message += `  • _${item.description}_\n`;
+            }
+
             if (item.customizations.length > 0) {
                 item.customizations.forEach(custom => {
                     message += `  • _${custom}_\n`;
@@ -574,18 +582,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const total = subtotal + DELIVERY_FEE;
+        const total = subtotal + (deliveryMode === 'delivery' ? DELIVERY_FEE : 0);
 
         message += `\n------------------------------------\n`;
         message += `💵 *Pagamento:*\n`;
         message += `Subtotal: R$${subtotal.toFixed(2)}\n`;
-        message += `Entrega: R$${DELIVERY_FEE.toFixed(2)}\n`;
+        if (deliveryMode === 'delivery') {
+            message += `Entrega: R$${DELIVERY_FEE.toFixed(2)}\n`;
+        }
         message += `*Total: R$${total.toFixed(2)}*\n\n`;
         
         message += `*Forma de Pagamento:* ${paymentInfo}\n\n`;
         message += `${timestamp}`;
 
         return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+    }
+    
+    function handleDeliveryTypeChange() {
+        const deliveryMode = document.querySelector('input[name="delivery-type"]:checked').value;
+        const addressFieldsContainer = document.getElementById('address-fields');
+        const addressInputs = addressFieldsContainer.querySelectorAll('input');
+        const deliveryFeeElement = document.getElementById('delivery-fee');
+
+        if (deliveryMode === 'delivery') {
+            addressFieldsContainer.style.display = 'block';
+            addressInputs.forEach(input => input.required = true);
+            deliveryFeeElement.parentElement.style.display = 'block'; // Mostra a linha da taxa
+        } else { // 'pickup'
+            addressFieldsContainer.style.display = 'none';
+            addressInputs.forEach(input => input.required = false);
+            deliveryFeeElement.parentElement.style.display = 'none'; // Esconde a linha da taxa
+        }
+        updateCart(); // Recalcula o total
     }
     
     function initialize() {
@@ -595,14 +623,13 @@ document.addEventListener('DOMContentLoaded', () => {
         loadProducts();
         loadCustomizationOptions();
         loadOrderState(); 
-        loadUserInfo(); // <-- MODIFICAÇÃO: Carrega os dados do usuário ao iniciar
+        loadUserInfo(); 
 
         window.addEventListener('scroll', handleScrollEffects);
         
-        // <-- MODIFICAÇÃO: Listener de evento para salvar o estado do pedido E os dados do usuário
         document.getElementById('address-form').addEventListener('input', () => {
-            saveOrderState(); // Salva o carrinho e o endereço do pedido atual
-            saveUserInfo();   // Salva os dados de contato/endereço para futuras visitas
+            saveOrderState(); 
+            saveUserInfo();
         });
 
         document.querySelectorAll('input[name="payment"]').forEach(radio => {
@@ -617,6 +644,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const changeAmountGroup = document.getElementById('change-amount-group');
                 changeAmountGroup.style.display = e.target.value === 'sim' ? 'block' : 'none';
             });
+        });
+
+        // Adiciona o event listener para os botões de modalidade de entrega
+        document.querySelectorAll('input[name="delivery-type"]').forEach(radio => {
+            radio.addEventListener('change', handleDeliveryTypeChange);
         });
 
         document.body.addEventListener('click', (e) => {
@@ -634,13 +666,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     const productCategory = productItemForModal.dataset.category;
                     const name = productItemForModal.dataset.name;
                     const price = parseFloat(productItemForModal.dataset.price);
+                    
+                    const description = productItemForModal.dataset.description || '';
 
                     if (!name || isNaN(price)) {
                         console.error("Dados do produto inválidos:", productItemForModal.dataset);
                         return;
                     }
 
-                    const productData = { name, price };
+                    const productData = { name, price, description };
 
                     if (productCategory === 'acai') {
                         const limits = {
@@ -758,6 +792,9 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             document.getElementById('menu').scrollIntoView({ behavior: 'smooth' });
         });
+        
+        // Chama a função uma vez no início para garantir o estado correto do formulário
+        handleDeliveryTypeChange();
         
         console.log("Inicialização de eventos concluída.");
     }

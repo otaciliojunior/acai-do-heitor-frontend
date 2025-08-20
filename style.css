@@ -256,7 +256,6 @@ main h2 {
     font-weight: 600;
     margin: 0;
 }
-/* **INÍCIO DA ALTERAÇÃO** */
 .product-details .product-description {
     font-size: 0.85rem;
     color: #666;
@@ -264,7 +263,6 @@ main h2 {
     margin-bottom: 6px;
     line-height: 1.4;
 }
-/* **FIM DA ALTERAÇÃO** */
 .product-details .price {
     font-size: 1rem;
     font-weight: 600;
@@ -507,11 +505,16 @@ footer h3 {
     font-weight: 600;
     font-size: 1.1rem;
 }
-.cart-item-customizations {
+
+/* INÍCIO DA ALTERAÇÃO: Estilo combinado para descrição e customizações */
+.cart-item-customizations,
+.cart-item-description {
     font-size: 0.85rem;
     color: #666;
     margin-top: 4px;
 }
+/* FIM DA ALTERAÇÃO */
+
 .quantity-controls {
     display: flex;
     align-items: center;
