@@ -20,8 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 1. CONFIGURAÇÕES ---
     const API_URL = 'https://acai-do-heitor-backend.onrender.com';
-    const WHATSAPP_NUMBER = "558491393356";
-    const DELIVERY_FEE = 2.00;
+    const WHATSAPP_NUMBER = "5584991393356";
     const PRODUCTS_LIMIT = 6;
     const ORDER_EXPIRATION_MINUTES = 20;
 
@@ -97,8 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.removeItem('orderState');
         }
     }
-
-    // --- INÍCIO DA NOVA IMPLEMENTAÇÃO: PERSISTÊNCIA DE DADOS DO USUÁRIO ---
     
     function saveUserInfo() {
         try {
@@ -108,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 phone: form.elements['customer-phone'].value,
                 street: form.elements['street-name'].value,
                 number: form.elements['house-number'].value,
-                reference: form.elements['reference-point'].value
+                location: form.elements['customer-location'].value
             };
             localStorage.setItem('userInfo', JSON.stringify(userInfo));
         } catch (error) {
@@ -128,7 +125,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     form.elements['customer-phone'].value = userInfo.phone || '';
                     form.elements['street-name'].value = userInfo.street || '';
                     form.elements['house-number'].value = userInfo.number || '';
-                    form.elements['reference-point'].value = userInfo.reference || '';
+                    
+                    if (userInfo.location) {
+                        const locationInput = document.getElementById('customer-location');
+                        const locationTextSpan = document.getElementById('selected-location-text');
+                        
+                        const locations = getLocationOptions();
+                        const selectedLocation = locations.find(loc => loc.value === userInfo.location);
+
+                        if (selectedLocation) {
+                            locationInput.value = selectedLocation.value;
+                            locationTextSpan.textContent = selectedLocation.text;
+                            locationTextSpan.classList.remove('placeholder');
+                        }
+                    }
                     console.log("Dados do usuário recuperados com sucesso.");
                 }
             }
@@ -137,8 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.removeItem('userInfo');
         }
     }
-
-    // --- FIM DA NOVA IMPLEMENTAÇÃO ---
 
 
     // --- FUNÇÕES DE CONTEÚDO DINÂMICO ---
@@ -475,7 +483,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const deliveryMode = document.querySelector('input[name="delivery-type"]:checked') ? document.querySelector('input[name="delivery-type"]:checked').value : 'delivery';
-        const currentDeliveryFee = deliveryMode === 'delivery' ? DELIVERY_FEE : 0;
+        let currentDeliveryFee = 0;
+        if (deliveryMode === 'delivery') {
+            const locationInput = document.getElementById('customer-location');
+            if (locationInput && locationInput.value) {
+                currentDeliveryFee = parseFloat(locationInput.value);
+            }
+        }
+
         const total = subtotal + currentDeliveryFee;
 
         document.getElementById('subtotal').innerText = `R$ ${subtotal.toFixed(2)}`;
@@ -534,12 +549,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (deliveryMode === 'delivery') {
             const street = document.getElementById('street-name').value;
             const number = document.getElementById('house-number').value;
-            const reference = document.getElementById('reference-point').value;
+            const locationText = document.getElementById('selected-location-text').textContent;
+
             addressInfo += `📍 *Endereço de Entrega:*\n`;
             addressInfo += `${street}, ${number}\n`;
-            if (reference) {
-                addressInfo += `_${reference}_\n`;
-            }
+            addressInfo += `*Localidade:* ${locationText}\n`;
         } else {
             addressInfo = `🛵 *Retirar no Local*\n`;
         }
@@ -586,21 +600,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const currentDeliveryFee = deliveryMode === 'delivery' ? DELIVERY_FEE : 0;
+        let currentDeliveryFee = 0;
+        if (deliveryMode === 'delivery') {
+            const locationInput = document.getElementById('customer-location');
+            if (locationInput && locationInput.value) {
+                currentDeliveryFee = parseFloat(locationInput.value);
+            }
+        }
         const total = subtotal + currentDeliveryFee;
 
         message += `\n------------------------------------\n`;
         message += `💵 *Pagamento:*\n`;
         message += `Subtotal: R$${subtotal.toFixed(2)}\n`;
         if (deliveryMode === 'delivery') {
-            message += `Entrega: R$${DELIVERY_FEE.toFixed(2)}\n`;
+            message += `Entrega: R$${currentDeliveryFee.toFixed(2)}\n`;
         }
         message += `*Total: R$${total.toFixed(2)}*\n\n`;
         
         message += `*Forma de Pagamento:* ${paymentInfo}\n\n`;
         
         if (paymentMethod === 'Pix') {
-            message += `⚠️ *Atenção:* Você escolheu pagamento via PIX. Por favor, envie o comprovante para que possamos processar seu pedido.\n\n`;
+            message += `*Atenção:* você escolheu pagamento via PIX. Por favor, envie o comprovante para que possamos processar seu pedido.\n\n`;
         }
 
         message += `${timestamp}`;
@@ -611,19 +631,28 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleDeliveryTypeChange() {
         const deliveryMode = document.querySelector('input[name="delivery-type"]:checked').value;
         const addressFieldsContainer = document.getElementById('address-fields');
-        const addressInputs = addressFieldsContainer.querySelectorAll('input[required]');
-        
+        const locationInput = document.getElementById('customer-location');
+        const streetInput = document.getElementById('street-name');
+        const numberInput = document.getElementById('house-number');
+        const locationTextSpan = document.getElementById('selected-location-text');
+
         if (deliveryMode === 'delivery') {
             addressFieldsContainer.style.display = 'block';
-            addressInputs.forEach(input => input.required = true);
-        } else {
+            locationInput.required = true;
+            streetInput.required = true;
+            numberInput.required = true;
+        } else { // 'pickup'
             addressFieldsContainer.style.display = 'none';
-            addressInputs.forEach(input => input.required = false);
+            locationInput.required = false;
+            streetInput.required = false;
+            numberInput.required = false;
+            locationInput.value = ''; // Reseta o valor do frete
+            locationTextSpan.textContent = 'Selecione seu local'; // Reseta o texto
+            locationTextSpan.classList.add('placeholder');
         }
         updateCart();
     }
     
-    // --- INÍCIO DA NOVA SEÇÃO: LÓGICA DO SISTEMA DE AVALIAÇÃO ---
     function initializeFeedbackSystem() {
         const stars = document.querySelectorAll('.star-rating .fas.fa-star');
         const submitBtn = document.getElementById('submit-feedback-btn');
@@ -641,7 +670,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     star.classList.remove(isPermanent ? 'selected' : 'hover');
                     if (!isPermanent) {
-                        // Se não for permanente, checa se a estrela deve continuar selecionada
                         if (starValue > selectedRating) {
                            star.classList.remove('selected');
                         }
@@ -695,7 +723,63 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         });
     }
-    // --- FIM DA NOVA SEÇÃO ---
+
+    // INÍCIO DA ALTERAÇÃO: Lógica do seletor de localidade customizado
+    function getLocationOptions() {
+        return [
+            { value: '0.00', text: 'Assentamento – Entrega grátis' },
+            { value: '3.00', text: 'Riacho do Sangue – R$ 3,00' },
+            { value: '4.00', text: 'Riacho de Benção – R$ 4,00' },
+            { value: '4.00', text: 'Peri Peri – R$ 4,00' },
+            { value: '3.00', text: 'Quilombo – R$ 3,00' },
+            { value: '3.00', text: 'Tabatinga – R$ 3,00' },
+            { value: '4.00', text: 'Lagoa Seca – R$ 4,00' },
+            { value: '5.00', text: 'Barro Branco – R$ 5,00' },
+            { value: '6.00', text: 'Lagoa do Boi – R$ 6,00' },
+            { value: '8.00', text: 'Cajarana – R$ 8,00' },
+            { value: '10.00', text: 'Canabrava – R$ 10,00' }
+        ];
+    }
+
+    function initializeCustomSelect() {
+        const trigger = document.getElementById('custom-select-trigger');
+        const locationOptionsList = document.getElementById('location-options-list');
+        const locationInput = document.getElementById('customer-location');
+        const locationTextSpan = document.getElementById('selected-location-text');
+
+        const locations = getLocationOptions();
+        locations.forEach(location => {
+            const optionEl = document.createElement('div');
+            optionEl.className = 'location-option';
+            optionEl.dataset.value = location.value;
+            
+            // Cria spans separados para nome e preço
+            const [name, price] = location.text.split('–').map(s => s.trim());
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'location-name';
+            nameSpan.textContent = name;
+            const priceSpan = document.createElement('span');
+            priceSpan.className = 'location-price';
+            priceSpan.textContent = price;
+
+            optionEl.appendChild(nameSpan);
+            optionEl.appendChild(priceSpan);
+            
+            optionEl.addEventListener('click', () => {
+                locationInput.value = location.value;
+                locationTextSpan.textContent = location.text;
+                locationTextSpan.classList.remove('placeholder');
+                updateCart();
+                closeModal('location-modal');
+            });
+            locationOptionsList.appendChild(optionEl);
+        });
+
+        trigger.addEventListener('click', () => {
+            openModal('location-modal');
+        });
+    }
+    // FIM DA ALTERAÇÃO
 
     function initialize() {
         loadBranding();
@@ -705,13 +789,16 @@ document.addEventListener('DOMContentLoaded', () => {
         loadCustomizationOptions();
         loadOrderState(); 
         loadUserInfo(); 
-        initializeFeedbackSystem(); // Ativa o sistema de avaliação
+        initializeFeedbackSystem();
+        initializeCustomSelect();
 
         window.addEventListener('scroll', handleScrollEffects);
         
-        document.getElementById('address-form').addEventListener('input', () => {
-            saveOrderState(); 
-            saveUserInfo();
+        document.getElementById('address-form').addEventListener('input', (e) => {
+            if (e.target.id !== 'customer-location') {
+                 saveOrderState(); 
+                 saveUserInfo();
+            }
         });
 
         document.querySelectorAll('input[name="payment"]').forEach(radio => {
@@ -731,7 +818,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('input[name="delivery-type"]').forEach(radio => {
             radio.addEventListener('change', handleDeliveryTypeChange);
         });
-
+        
         document.body.addEventListener('click', (e) => {
             const productItem = e.target.closest('.product-item');
             if (productItem && !productItem.classList.contains('unavailable')) {
@@ -818,10 +905,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target.id === 'review-order-btn') {
                 const form = document.getElementById('address-form');
                 if (form.checkValidity()) {
-                    // Copia o conteúdo do carrinho para a revisão
                     document.getElementById('review-items').innerHTML = document.getElementById('cart-items').innerHTML;
 
-                    // Lógica para detalhes de endereço e pagamento
                     const deliveryMode = document.querySelector('input[name="delivery-type"]:checked').value;
                     const addressLabel = document.getElementById('review-address-label');
                     let addressDetails = '';
@@ -829,8 +914,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         addressLabel.innerText = 'Endereço de Entrega:';
                         const street = document.getElementById('street-name').value;
                         const number = document.getElementById('house-number').value;
-                        const reference = document.getElementById('reference-point').value;
-                        addressDetails = `${street}, ${number}${reference ? ` (${reference})` : ''}`;
+                        const locationText = document.getElementById('selected-location-text').textContent;
+                        addressDetails = `${street}, ${number}\n${locationText}`;
                     } else {
                         addressLabel.innerText = 'Modalidade:';
                         addressDetails = 'Retirar no local';
