@@ -451,7 +451,6 @@ document.addEventListener('DOMContentLoaded', () => {
             cart.forEach((item, index) => {
                 subtotal += item.price * item.quantity;
                 
-                // INÍCIO DA ALTERAÇÃO: Adiciona a descrição (se houver) ao HTML do carrinho
                 const descriptionHTML = item.description ? `<div class="cart-item-description">${item.description}</div>` : '';
                 const customizationsHTML = item.customizations.length > 0 ? `<div class="cart-item-customizations">${item.customizations.join(', ')}</div>` : '';
                 
@@ -474,11 +473,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>`;
             });
         }
-        const total = subtotal + DELIVERY_FEE;
+        
+        const deliveryMode = document.querySelector('input[name="delivery-type"]:checked') ? document.querySelector('input[name="delivery-type"]:checked').value : 'delivery';
+        const currentDeliveryFee = deliveryMode === 'delivery' ? DELIVERY_FEE : 0;
+        const total = subtotal + currentDeliveryFee;
+
         document.getElementById('subtotal').innerText = `R$ ${subtotal.toFixed(2)}`;
-        document.getElementById('delivery-fee').innerText = `R$ ${DELIVERY_FEE.toFixed(2)}`;
+        document.getElementById('delivery-fee').innerText = `R$ ${currentDeliveryFee.toFixed(2)}`;
         document.getElementById('total-price').innerText = `R$ ${total.toFixed(2)}`;
         document.getElementById('checkout-btn').disabled = cart.length === 0;
+        
         const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
         document.getElementById('floating-cart-count').innerText = totalItems;
         document.getElementById('floating-cart-btn').classList.toggle('visible', totalItems > 0);
@@ -582,7 +586,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const total = subtotal + (deliveryMode === 'delivery' ? DELIVERY_FEE : 0);
+        const currentDeliveryFee = deliveryMode === 'delivery' ? DELIVERY_FEE : 0;
+        const total = subtotal + currentDeliveryFee;
 
         message += `\n------------------------------------\n`;
         message += `💵 *Pagamento:*\n`;
@@ -593,6 +598,13 @@ document.addEventListener('DOMContentLoaded', () => {
         message += `*Total: R$${total.toFixed(2)}*\n\n`;
         
         message += `*Forma de Pagamento:* ${paymentInfo}\n\n`;
+        
+        // INÍCIO DA ALTERAÇÃO: Adiciona o aviso do PIX
+        if (paymentMethod === 'Pix') {
+            message += `Você escolheu pagamento via PIX. Por favor, envie o comprovante para que possamos processar seu pedido.\n\n`;
+        }
+        // FIM DA ALTERAÇÃO
+
         message += `${timestamp}`;
 
         return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
@@ -601,19 +613,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleDeliveryTypeChange() {
         const deliveryMode = document.querySelector('input[name="delivery-type"]:checked').value;
         const addressFieldsContainer = document.getElementById('address-fields');
-        const addressInputs = addressFieldsContainer.querySelectorAll('input');
-        const deliveryFeeElement = document.getElementById('delivery-fee');
-
+        const addressInputs = addressFieldsContainer.querySelectorAll('input[required]');
+        
         if (deliveryMode === 'delivery') {
             addressFieldsContainer.style.display = 'block';
             addressInputs.forEach(input => input.required = true);
-            deliveryFeeElement.parentElement.style.display = 'block'; // Mostra a linha da taxa
-        } else { // 'pickup'
+        } else {
             addressFieldsContainer.style.display = 'none';
             addressInputs.forEach(input => input.required = false);
-            deliveryFeeElement.parentElement.style.display = 'none'; // Esconde a linha da taxa
         }
-        updateCart(); // Recalcula o total
+        updateCart();
     }
     
     function initialize() {
@@ -646,7 +655,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Adiciona o event listener para os botões de modalidade de entrega
         document.querySelectorAll('input[name="delivery-type"]').forEach(radio => {
             radio.addEventListener('change', handleDeliveryTypeChange);
         });
@@ -737,10 +745,22 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target.id === 'review-order-btn') {
                 const form = document.getElementById('address-form');
                 if (form.checkValidity()) {
-                    const street = document.getElementById('street-name').value;
-                    const number = document.getElementById('house-number').value;
-                    const reference = document.getElementById('reference-point').value;
-                    document.getElementById('review-address-details').innerText = `${street}, ${number}${reference ? ` (${reference})` : ''}`;
+                    // Copia o conteúdo do carrinho para a revisão
+                    document.getElementById('review-items').innerHTML = document.getElementById('cart-items').innerHTML;
+
+                    // Lógica para detalhes de endereço e pagamento
+                    const deliveryMode = document.querySelector('input[name="delivery-type"]:checked').value;
+                    let addressDetails = '';
+                    if (deliveryMode === 'delivery') {
+                        const street = document.getElementById('street-name').value;
+                        const number = document.getElementById('house-number').value;
+                        const reference = document.getElementById('reference-point').value;
+                        addressDetails = `${street}, ${number}${reference ? ` (${reference})` : ''}`;
+                    } else {
+                        addressDetails = 'Retirar no local';
+                    }
+                    document.getElementById('review-address-details').innerText = addressDetails;
+
                     const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
                     let paymentInfo = paymentMethod;
                     if (paymentMethod === 'Dinheiro') {
@@ -751,11 +771,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                     document.getElementById('review-payment-method').innerText = paymentInfo;
-                    document.getElementById('review-items').innerHTML = document.getElementById('cart-items').innerHTML;
+                    
                     document.getElementById('review-total-price').innerText = document.getElementById('total-price').innerText;
+                    
                     closeModal('address-modal');
                     openModal('review-modal');
-                } else { form.reportValidity(); }
+                } else { 
+                    form.reportValidity(); 
+                }
             }
         });
 
