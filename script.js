@@ -599,11 +599,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         message += `*Forma de Pagamento:* ${paymentInfo}\n\n`;
         
-        // INÍCIO DA ALTERAÇÃO: Adiciona o aviso do PIX
         if (paymentMethod === 'Pix') {
-            message += `Você escolheu pagamento via PIX. Por favor, envie o comprovante para que possamos processar seu pedido.\n\n`;
+            message += `⚠️ *Atenção:* Você escolheu pagamento via PIX. Por favor, envie o comprovante para que possamos processar seu pedido.\n\n`;
         }
-        // FIM DA ALTERAÇÃO
 
         message += `${timestamp}`;
 
@@ -625,6 +623,80 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCart();
     }
     
+    // --- INÍCIO DA NOVA SEÇÃO: LÓGICA DO SISTEMA DE AVALIAÇÃO ---
+    function initializeFeedbackSystem() {
+        const stars = document.querySelectorAll('.star-rating .fas.fa-star');
+        const submitBtn = document.getElementById('submit-feedback-btn');
+        const commentBox = document.getElementById('feedback-comment');
+        const feedbackSection = document.getElementById('feedback-section');
+        const thanksSection = document.getElementById('feedback-thanks');
+        let selectedRating = 0;
+
+        function updateStars(rating, isPermanent = false) {
+            stars.forEach(star => {
+                const starValue = parseInt(star.dataset.value, 10);
+                if (starValue <= rating) {
+                    star.classList.add(isPermanent ? 'selected' : 'hover');
+                    if (!isPermanent) star.classList.remove('selected');
+                } else {
+                    star.classList.remove(isPermanent ? 'selected' : 'hover');
+                    if (!isPermanent) {
+                        // Se não for permanente, checa se a estrela deve continuar selecionada
+                        if (starValue > selectedRating) {
+                           star.classList.remove('selected');
+                        }
+                    }
+                }
+            });
+        }
+
+        stars.forEach(star => {
+            star.addEventListener('mouseover', () => {
+                updateStars(parseInt(star.dataset.value, 10));
+            });
+
+            star.addEventListener('click', () => {
+                selectedRating = parseInt(star.dataset.value, 10);
+                updateStars(selectedRating, true);
+            });
+        });
+
+        document.querySelector('.star-rating').addEventListener('mouseout', () => {
+            updateStars(selectedRating);
+        });
+
+        submitBtn.addEventListener('click', () => {
+            if (selectedRating === 0) {
+                alert('Por favor, selecione uma nota de 1 a 5 estrelas.');
+                return;
+            }
+
+            const comment = commentBox.value.trim();
+            const feedbackData = {
+                rating: selectedRating,
+                comment: comment,
+                timestamp: new Date()
+            };
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Enviando...';
+
+            db.collection('avaliacoes').add(feedbackData)
+                .then(() => {
+                    console.log("Avaliação salva com sucesso!");
+                    feedbackSection.style.display = 'none';
+                    thanksSection.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error("Erro ao salvar avaliação: ", error);
+                    alert('Ocorreu um erro ao enviar sua avaliação. Tente novamente.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Enviar Avaliação';
+                });
+        });
+    }
+    // --- FIM DA NOVA SEÇÃO ---
+
     function initialize() {
         loadBranding();
         loadOperatingStatus();
@@ -633,6 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadCustomizationOptions();
         loadOrderState(); 
         loadUserInfo(); 
+        initializeFeedbackSystem(); // Ativa o sistema de avaliação
 
         window.addEventListener('scroll', handleScrollEffects);
         
@@ -750,13 +823,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Lógica para detalhes de endereço e pagamento
                     const deliveryMode = document.querySelector('input[name="delivery-type"]:checked').value;
+                    const addressLabel = document.getElementById('review-address-label');
                     let addressDetails = '';
                     if (deliveryMode === 'delivery') {
+                        addressLabel.innerText = 'Endereço de Entrega:';
                         const street = document.getElementById('street-name').value;
                         const number = document.getElementById('house-number').value;
                         const reference = document.getElementById('reference-point').value;
                         addressDetails = `${street}, ${number}${reference ? ` (${reference})` : ''}`;
                     } else {
+                        addressLabel.innerText = 'Modalidade:';
                         addressDetails = 'Retirar no local';
                     }
                     document.getElementById('review-address-details').innerText = addressDetails;
@@ -786,14 +862,21 @@ document.addEventListener('DOMContentLoaded', () => {
              if (e.target.id === 'back-to-address-btn') { closeModal('review-modal'); openModal('address-modal'); }
              if (e.target.id === 'submit-order-btn') {
                 const btn = e.target;
-                btn.disabled = true; btn.textContent = 'Enviando...';
+                btn.disabled = true;
+                btn.textContent = 'Enviando...';
+                
                 const whatsappUrl = generateWhatsAppMessage();
-                document.getElementById('send-whatsapp-btn').href = whatsappUrl;
+                
+                window.open(whatsappUrl, '_blank');
+                
                 cart = [];
                 updateCart(); 
                 closeModal('review-modal');
+                
                 openModal('submit-modal');
-                btn.disabled = false; btn.textContent = 'Enviar Pedido';
+                
+                btn.disabled = false;
+                btn.textContent = 'Enviar Pedido';
             }
         });
 
@@ -816,7 +899,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('menu').scrollIntoView({ behavior: 'smooth' });
         });
         
-        // Chama a função uma vez no início para garantir o estado correto do formulário
         handleDeliveryTypeChange();
         
         console.log("Inicialização de eventos concluída.");

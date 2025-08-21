@@ -436,6 +436,7 @@ footer h3 {
     transform: translateY(-30px);
     transition: transform 0.3s ease;
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    position: relative; /* INÍCIO DA ALTERAÇÃO: Adicionado para o posicionamento do botão 'x' */
 }
 .modal.visible .modal-content {
     transform: translateY(0);
@@ -455,14 +456,22 @@ footer h3 {
     overflow-y: auto;
     padding: 10px 20px;
 }
+
+/* INÍCIO DA ALTERAÇÃO: Posicionamento do botão 'x' */
 .close-btn, .close-custom-modal-btn {
+    position: absolute;
+    top: 10px;
+    right: 20px;
     color: #aaa;
     font-size: 28px;
     font-weight: bold;
     border: none;
     background: none;
     cursor: pointer;
+    line-height: 1;
 }
+/* FIM DA ALTERAÇÃO */
+
 .modal-footer {
     border-top: 1px solid var(--border-color);
     padding: 20px;
@@ -505,16 +514,12 @@ footer h3 {
     font-weight: 600;
     font-size: 1.1rem;
 }
-
-/* INÍCIO DA ALTERAÇÃO: Estilo combinado para descrição e customizações */
 .cart-item-customizations,
 .cart-item-description {
     font-size: 0.85rem;
     color: #666;
     margin-top: 4px;
 }
-/* FIM DA ALTERAÇÃO */
-
 .quantity-controls {
     display: flex;
     align-items: center;
@@ -667,7 +672,7 @@ footer h3 {
 }
 #submit-modal .modal-content {
     text-align: center;
-    padding: 20px;
+    padding: 40px 20px 20px 20px; /* Ajuste no padding para o botão 'x' */
 }
 .whatsapp-btn {
     width: 100%;
