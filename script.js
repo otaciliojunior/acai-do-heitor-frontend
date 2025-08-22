@@ -372,7 +372,27 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const customModal = document.getElementById('customization-modal');
         customModal.querySelector('#customization-form').addEventListener('change', enforceSelectionLimits);
-        customModal.addEventListener('click', (e) => { if (e.target.id === 'add-custom-to-cart-btn') addCustomizedItemToCart(); if (e.target.matches('.quantity-btn')) { let qty = currentCustomizingProduct.quantity; if (e.target.dataset.action === 'decrease' && qty > 1) qty--; else if (e.target.dataset.action === 'increase') qty++; currentCustomizingProduct.quantity = qty; document.getElementById('custom-quantity').textContent = qty; updateCustomPrice(); } });
+        // ======================= INÍCIO DA CORREÇÃO =======================
+        customModal.addEventListener('click', (e) => {
+            // Lógica para fechar o modal, agora com a classe correta
+            if (e.target.closest('.close-custom-modal-btn')) {
+                closeModal('customization-modal');
+            }
+            // Lógica para adicionar item ao carrinho
+            if (e.target.id === 'add-custom-to-cart-btn') {
+                addCustomizedItemToCart();
+            }
+            // Lógica para os botões de quantidade
+            if (e.target.matches('.quantity-btn')) {
+                let qty = currentCustomizingProduct.quantity;
+                if (e.target.dataset.action === 'decrease' && qty > 1) qty--;
+                else if (e.target.dataset.action === 'increase') qty++;
+                currentCustomizingProduct.quantity = qty;
+                document.getElementById('custom-quantity').textContent = qty;
+                updateCustomPrice();
+            }
+        });
+        // ======================== FIM DA CORREÇÃO =========================
 
         document.getElementById('view-menu-btn').addEventListener('click', (e) => { e.preventDefault(); document.getElementById('menu').scrollIntoView({ behavior: 'smooth' }); });
         
@@ -380,7 +400,6 @@ document.addEventListener('DOMContentLoaded', () => {
         checkForActiveOrder();
 
         document.getElementById('close-tracking-modal-btn').addEventListener('click', () => closeModal('tracking-modal'));
-        document.getElementById('close-custom-modal-btn').addEventListener('click', () => closeModal('customization-modal'));
         document.getElementById('submit-modal').addEventListener('click', (e) => { if (e.target.matches('.close-btn')) { closeModal('submit-modal'); }});
     }
 
