@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Painel de Pedidos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4e008d;
+            --background-color: #f0f2f5;
+            --card-background: #ffffff;
+            --text-dark: #1c1e21;
+            --text-light: #606770;
+            --border-color: #dee2e6;
+            --success-color: #198754;
+            --danger-color: #dc3545;
+            --blue-color: #0d6efd;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-dark);
+            padding-top: 60px; /* Espaço para o header fixo */
+            padding-bottom: 70px; /* Espaço para a nav fixa */
+        }
+        .header-fixed {
+            background-color: var(--card-background);
+            padding: 0 15px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .header-fixed h1 { font-size: 1.25rem; color: var(--primary-color); }
+        #order-count-badge {
+            background-color: var(--danger-color);
+            color: white;
+            font-size: 0.9rem;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 20px;
+        }
+        main { padding: 15px; }
+        .view { display: none; }
+        .view.active { display: block; animation: viewFadeIn 0.3s ease; }
+        @keyframes viewFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Estilos dos Cards de Novos Pedidos */
+        .order-card {
+            background-color: var(--card-background);
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .order-card.removing { opacity: 0; transform: scale(0.95); }
+        .card-summary { padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .card-info h3 { font-size: 1.15rem; margin-bottom: 2px; }
+        .card-info span { font-size: 0.9rem; color: var(--text-light); }
+        .card-status { text-align: right; }
+        .total-badge { font-size: 1.1rem; font-weight: bold; color: var(--success-color); display: block; margin-bottom: 4px; }
+        .delivery-type { font-size: 0.9rem; color: var(--text-light); }
+        .delivery-type i { margin-right: 5px; }
+        .card-details { max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.4s ease; }
+        .order-card.expanded .card-details { max-height: 1200px; padding: 15px; border-top: 1px solid var(--border-color); }
+        .card-details pre { white-space: pre-wrap; font-family: inherit; font-size: 0.95rem; line-height: 1.6; }
+        .card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
+        .card-actions button { padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background-color 0.2s; }
+        .copy-btn { background-color: var(--blue-color); color: white; }
+        .move-btn { background-color: var(--success-color); color: white; }
+
+        /* Estilos da View de Busca */
+        #search-form { display: flex; gap: 10px; margin-bottom: 20px; }
+        #search-input { flex: 1; padding: 12px; font-size: 1rem; border: 1px solid var(--border-color); border-radius: 8px; }
+        #search-button { padding: 0 20px; border: none; border-radius: 8px; background-color: var(--primary-color); color: white; font-size: 1.1rem; }
+        .result-card { background-color: var(--card-background); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+        .message-box { text-align: center; padding: 40px; color: var(--text-light); }
+
+        /* Navegação Inferior */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background-color: var(--card-background); display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); z-index: 100; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-light); font-size: 0.8rem; font-weight: 500; border: none; background: none; flex: 1; padding: 10px 0; }
+        .nav-item i { font-size: 1.5rem; }
+        .nav-item.active { color: var(--primary-color); }
+        
+        /* NOVO: Estilos para o botão de ativação de som */
+        #sound-activation-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+            transition: opacity 0.3s ease;
+        }
+        #sound-activation-button {
+            padding: 20px 30px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            background-color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="sound-activation-overlay">
+        <button id="sound-activation-button">
+            <i class="fas fa-volume-up"></i>
+            Ativar Notificações Sonoras
+        </button>
+    </div>
+
+    <header class="header-fixed">
+        <h1>Açaí do Heitor</h1>
+        <span id="order-count-badge" style="display: none;">0</span>
+    </header>
+
+    <main>
+        <div id="new-orders-view" class="view active"></div>
+        <div id="search-view" class="view">
+            <form id="search-form">
+                <input type="search" id="search-input" placeholder="Nome ou Nº do pedido" required>
+                <button type="submit" id="search-button"><i class="fas fa-search"></i></button>
+            </form>
+            <div id="search-results">
+                <div class="message-box">Busque por pedidos concluídos.</div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bottom-nav">
+        <button class="nav-item active" data-view="new-orders-view">
+            <i class="fas fa-receipt"></i>
+            <span>Novos</span>
+        </button>
+        <button class="nav-item" data-view="search-view">
+            <i class="fas fa-history"></i>
+            <span>Buscar</span>
+        </button>
+    </footer>
+
+    <audio id="notification-sound" preload="auto">
+        <source src="notificar/novo-pedido.ogg" type="audio/ogg">
+        <source src="notificar/novo-pedido.mp3" type="audio/mpeg">
+        Seu navegador não suporta a tag de áudio.
+    </audio>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="nota_script.js"></script>
+
+</body>
+</html>
