@@ -159,12 +159,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const finishedOrders = allOrdersCache.filter(order => order.data.status !== 'novo');
+        
+        // **INÍCIO DA CORREÇÃO**
         const results = finishedOrders.filter(order => {
+            // Adiciona uma verificação para garantir que 'orderId' e 'customerName' existam antes de usar '.includes()'
+            const orderId = order.data.orderId || '';
             const customerName = (order.data.customer && order.data.customer.name) ? order.data.customer.name : (order.data.customerName || '');
-            const orderIdMatch = order.data.orderId.includes(searchTerm);
+            
+            const orderIdMatch = orderId.includes(searchTerm);
             const customerNameMatch = customerName.toLowerCase().includes(searchTerm);
             return orderIdMatch || customerNameMatch;
         });
+        // **FIM DA CORREÇÃO**
 
         renderSearchResults(results);
     });
@@ -201,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="card-summary">
                 <div class="card-info">
                     <h3>${customerName}</h3>
-                    <span>#${orderData.orderId} - ${date}</span>
+                    <span>#${orderData.orderId || ''} - ${date}</span>
                 </div>
                 <div class="card-status">
                     <span class="total-badge">R$ ${totalValue}</span>
@@ -234,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.innerHTML = `
             <h3>${customerName}</h3>
             <p>
-                <strong>Pedido #${orderData.orderId}</strong> | Data: ${date} | Total: R$ ${totalValue}
+                <strong>Pedido #${orderData.orderId || ''}</strong> | Data: ${date} | Total: R$ ${totalValue}
                 <br>
                 Status: <strong>${orderData.status}</strong>
             </p>

@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM carregado. Iniciando script...");
 
     // --- 1. CONFIGURAÇÕES ---
-    // **NOVO**: URL do backend para centralizar a comunicação
     const BACKEND_URL = 'https://acai-do-heitor-backend.onrender.com';
     const WHATSAPP_NUMBER = "5584991393356";
     const PRODUCTS_LIMIT = 6;
@@ -50,7 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             localStorage.setItem('orderState', JSON.stringify(stateWithTimestamp));
-            console.log("Estado do pedido salvo.");
         } catch (error) {
             console.error("Erro ao salvar o estado do pedido:", error);
         }
@@ -90,7 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToastNotification('Sua sacola foi recuperada!', 'info');
             } else {
                 localStorage.removeItem('orderState');
-                showToastNotification('Sua sacola foi limpa devido ao tempo de expiração', 'info');
             }
         } catch (error) {
             console.error("Erro ao carregar o estado do pedido:", error);
@@ -140,7 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             locationTextSpan.classList.remove('placeholder');
                         }
                     }
-                    console.log("Dados do usuário recuperados com sucesso.");
                 }
             }
         } catch (error) {
@@ -174,11 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const todayName = daysOrder[todayIndex];
                     const todayHours = operatingHours[todayName];
 
-                    if (!todayHours) {
-                        console.error(`Horários para "${todayName}" não encontrados no Firebase.`);
-                        container.innerHTML = `<span class="status-badge closed">Indisponível</span>`;
-                        return;
-                    }
+                    if (!todayHours) { return; }
 
                     let statusHTML = '';
                     
@@ -206,11 +198,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 nextOpenDayIndex = dayIndex;
                                 nextOpenTime = daySchedule.open;
                                 
-                                if (i === 0) {
-                                    nextOpenDayText = "hoje";
-                                } else if (i === 1) {
-                                    nextOpenDayText = "amanhã";
-                                } else {
+                                if (i === 0) { nextOpenDayText = "hoje"; } 
+                                else if (i === 1) { nextOpenDayText = "amanhã"; }
+                                else {
                                     const dayDisplayNames = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
                                     nextOpenDayText = dayDisplayNames[nextOpenDayIndex];
                                 }
@@ -255,15 +245,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 } catch (error) {
                     console.error("Erro ao processar os horários de funcionamento:", error);
-                    container.innerHTML = `<span class="status-badge closed">Erro ao carregar</span>`;
                 }
-            } else {
-                console.warn("Documento 'operatingHours' não encontrado no Firebase.");
-                container.innerHTML = `<span class="status-badge closed">Horário indisponível</span>`;
             }
-        }).catch(error => {
-            console.error("Erro ao buscar horários de funcionamento:", error);
-            container.innerHTML = `<span class="status-badge closed">Erro de conexão</span>`;
         });
     }
 
@@ -358,8 +341,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
-
-    // --- FUNÇÕES DE LÓGICA DO SITE ---
 
     function updateProductsView() {
         const productList = document.querySelector('.product-list');
@@ -706,11 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return text;
     }
 
-    // ==================================================================
-    // **INÍCIO DA CORREÇÃO PRINCIPAL**
-    // Função alterada para enviar o pedido para o seu backend em vez de direto para o Firebase
-    // ==================================================================
-    async function saveOrderToFirebase() {
+    async function saveOrderToBackend() {
         const orderId = Date.now().toString().slice(-6);
         const printerText = generatePrinterFriendlyText(orderId);
         const deliveryMode = document.querySelector('input[name="delivery-type"]:checked').value;
@@ -723,13 +700,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-        // Monta o objeto do pedido com a estrutura correta (aninhando dados do cliente)
         const orderData = {
             orderId: orderId,
-            customer: { // Objeto aninhado para dados do cliente
-                name: document.getElementById('customer-name').value,
-                phone: document.getElementById('customer-phone').value,
-            },
+            customerName: document.getElementById('customer-name').value,
+            customerPhone: document.getElementById('customer-phone').value,
             deliveryMode: deliveryMode,
             address: deliveryMode === 'delivery' ? {
                 street: document.getElementById('street-name').value,
@@ -747,27 +721,23 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            // Envia os dados para o seu backend usando fetch
             const response = await fetch(`${BACKEND_URL}/orders`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(orderData),
             });
 
             if (!response.ok) {
-                // Se o backend retornar um erro, lança uma exceção
                 throw new Error('Falha ao enviar o pedido para o servidor.');
             }
 
             const result = await response.json();
             console.log("Pedido salvo com sucesso via backend!", result);
-
+            return true;
         } catch (error) {
             console.error("Erro ao salvar pedido via backend: ", error);
-            // **NOVO**: Informa o usuário sobre a falha
-            alert("Ocorreu um erro ao registrar seu pedido no sistema. Por favor, verifique sua conexão ou tente novamente. Você ainda pode enviar a mensagem no WhatsApp.");
+            alert("Ocorreu um erro ao registrar seu pedido no sistema. Você ainda será direcionado para o WhatsApp para garantir seu pedido.");
+            return false;
         }
     }
 
@@ -778,21 +748,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const locationInput = document.getElementById('customer-location');
         const streetInput = document.getElementById('street-name');
         const numberInput = document.getElementById('house-number');
-        const locationTextSpan = document.getElementById('selected-location-text');
-
+        
         if (deliveryMode === 'delivery') {
             addressFieldsContainer.style.display = 'block';
             locationInput.required = true;
             streetInput.required = true;
             numberInput.required = true;
-        } else { // 'pickup'
+        } else {
             addressFieldsContainer.style.display = 'none';
             locationInput.required = false;
             streetInput.required = false;
             numberInput.required = false;
-            locationInput.value = ''; // Reseta o valor do frete
-            locationTextSpan.textContent = 'Selecione seu local'; // Reseta o texto
-            locationTextSpan.classList.add('placeholder');
+            locationInput.value = '';
         }
         updateCart();
     }
@@ -810,32 +777,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 const starValue = parseInt(star.dataset.value, 10);
                 if (starValue <= rating) {
                     star.classList.add(isPermanent ? 'selected' : 'hover');
-                    if (!isPermanent) star.classList.remove('selected');
                 } else {
                     star.classList.remove(isPermanent ? 'selected' : 'hover');
-                    if (!isPermanent) {
-                        if (starValue > selectedRating) {
-                           star.classList.remove('selected');
-                        }
-                    }
                 }
             });
         }
 
         stars.forEach(star => {
-            star.addEventListener('mouseover', () => {
-                updateStars(parseInt(star.dataset.value, 10));
-            });
-
+            star.addEventListener('mouseover', () => updateStars(parseInt(star.dataset.value, 10)));
             star.addEventListener('click', () => {
                 selectedRating = parseInt(star.dataset.value, 10);
                 updateStars(selectedRating, true);
             });
         });
 
-        document.querySelector('.star-rating').addEventListener('mouseout', () => {
-            updateStars(selectedRating);
-        });
+        document.querySelector('.star-rating').addEventListener('mouseout', () => updateStars(selectedRating, true));
 
         submitBtn.addEventListener('click', () => {
             if (selectedRating === 0) {
@@ -843,28 +799,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const comment = commentBox.value.trim();
-            const feedbackData = {
-                rating: selectedRating,
-                comment: comment,
-                timestamp: new Date()
-            };
-
             submitBtn.disabled = true;
             submitBtn.textContent = 'Enviando...';
 
-            db.collection('avaliacoes').add(feedbackData)
-                .then(() => {
-                    console.log("Avaliação salva com sucesso!");
-                    feedbackSection.style.display = 'none';
-                    thanksSection.style.display = 'block';
-                })
-                .catch(error => {
-                    console.error("Erro ao salvar avaliação: ", error);
-                    alert('Ocorreu um erro ao enviar sua avaliação. Tente novamente.');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Enviar Avaliação';
-                });
+            db.collection('avaliacoes').add({
+                rating: selectedRating,
+                comment: commentBox.value.trim(),
+                timestamp: new Date()
+            }).then(() => {
+                feedbackSection.style.display = 'none';
+                thanksSection.style.display = 'block';
+            }).catch(error => {
+                console.error("Erro ao salvar avaliação: ", error);
+                alert('Ocorreu um erro ao enviar sua avaliação. Tente novamente.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Enviar Avaliação';
+            });
         });
     }
 
@@ -917,9 +867,7 @@ document.addEventListener('DOMContentLoaded', () => {
             locationOptionsList.appendChild(optionEl);
         });
 
-        trigger.addEventListener('click', () => {
-            openModal('location-modal');
-        });
+        trigger.addEventListener('click', () => openModal('location-modal'));
     }
 
     function initialize() {
@@ -935,24 +883,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         window.addEventListener('scroll', handleScrollEffects);
         
-        document.getElementById('address-form').addEventListener('input', (e) => {
-            if (e.target.id !== 'customer-location') {
-                 saveOrderState(); 
-                 saveUserInfo();
-            }
+        document.getElementById('address-form').addEventListener('input', () => {
+             saveOrderState(); 
+             saveUserInfo();
         });
 
         document.querySelectorAll('input[name="payment"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
-                const changeSection = document.getElementById('change-section');
-                changeSection.style.display = e.target.value === 'Dinheiro' ? 'block' : 'none';
+                document.getElementById('change-section').style.display = e.target.value === 'Dinheiro' ? 'block' : 'none';
             });
         });
 
         document.querySelectorAll('input[name="needs-change"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
-                const changeAmountGroup = document.getElementById('change-amount-group');
-                changeAmountGroup.style.display = e.target.value === 'sim' ? 'block' : 'none';
+                document.getElementById('change-amount-group').style.display = e.target.value === 'sim' ? 'block' : 'none';
             });
         });
 
@@ -960,30 +904,31 @@ document.addEventListener('DOMContentLoaded', () => {
             radio.addEventListener('change', handleDeliveryTypeChange);
         });
         
+        // =================================================================================
+        // CORREÇÃO DEFINITIVA: LÓGICA DE CLIQUE RESTAURADA DO SCRIPT ANTIGO
+        // Este bloco de código garante que o botão "Adicionar" aparece ao clicar no produto.
+        // =================================================================================
         document.body.addEventListener('click', (e) => {
+            // LÓGICA PARTE 1: MOSTRAR O BOTÃO AO CLICAR NO PRODUTO
             const productItem = e.target.closest('.product-item');
             if (productItem && !productItem.classList.contains('unavailable')) {
+                // Apenas ativa o item se o clique não foi diretamente no botão de adicionar
                 if (!e.target.closest('.add-btn')) {
                     document.querySelectorAll('.product-item.active').forEach(item => item.classList.remove('active'));
                     productItem.classList.add('active');
                 }
             }
             
+            // LÓGICA PARTE 2: AÇÃO DO BOTÃO "ADICIONAR" / "PERSONALIZAR"
             if (e.target.matches('.add-btn')) {
                 const productItemForModal = e.target.closest('.product-item');
                 if (productItemForModal && !productItemForModal.classList.contains('unavailable')) {
                     const productCategory = productItemForModal.dataset.category;
-                    const name = productItemForModal.dataset.name;
-                    const price = parseFloat(productItemForModal.dataset.price);
-                    
-                    const description = productItemForModal.dataset.description || '';
-
-                    if (!name || isNaN(price)) {
-                        console.error("Dados do produto inválidos:", productItemForModal.dataset);
-                        return;
-                    }
-
-                    const productData = { name, price, description };
+                    const productData = { 
+                        name: productItemForModal.dataset.name, 
+                        price: parseFloat(productItemForModal.dataset.price),
+                        description: productItemForModal.dataset.description || ''
+                    };
 
                     if (productCategory === 'acai') {
                         const limits = {
@@ -992,19 +937,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         };
                         openCustomizationModal(productData, limits);
                     } else {
-                        const cartItem = {
-                            ...productData,
-                            quantity: 1,
-                            customizations: [],
-                            uniqueId: Date.now()
-                        };
-                        cart.push(cartItem);
+                        cart.push({ ...productData, quantity: 1, customizations: [], uniqueId: Date.now() });
                         updateCart();
                         showToastNotification(`${productData.name} foi adicionado ao carrinho!`);
                     }
                 }
             }
             
+            // Outros event listeners de clique que estavam aqui
             if (e.target.matches('.filter-btn')) {
                 document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
                 e.target.classList.add('active');
@@ -1012,7 +952,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (e.target.closest('#floating-cart-btn')) openModal('cart-modal');
-            if (e.target.matches('.close-btn, .close-custom-modal-btn')) {
+            if (e.target.matches('.close-btn')) {
                 const modal = e.target.closest('.modal');
                 if (modal) closeModal(modal.id);
             }
@@ -1028,9 +968,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 closeModal('cart-modal');
                 openModal('address-modal');
             }
-            const cartItem = e.target.closest('.cart-item');
-            if (cartItem) {
-                const index = cartItem.dataset.index;
+            const cartItemEl = e.target.closest('.cart-item');
+            if (cartItemEl) {
+                const index = cartItemEl.dataset.index;
                 if (e.target.matches('.remove-btn')) cart.splice(index, 1);
                 if (e.target.matches('.quantity-btn')) {
                     const action = e.target.dataset.action;
@@ -1047,33 +987,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const form = document.getElementById('address-form');
                 if (form.checkValidity()) {
                     document.getElementById('review-items').innerHTML = document.getElementById('cart-items').innerHTML;
-
+                    
                     const deliveryMode = document.querySelector('input[name="delivery-type"]:checked').value;
-                    const addressLabel = document.getElementById('review-address-label');
-                    let addressDetails = '';
+                    let addressDetails = 'Retirar no local';
                     if (deliveryMode === 'delivery') {
-                        addressLabel.innerText = 'Endereço de Entrega:';
-                        const street = document.getElementById('street-name').value;
-                        const number = document.getElementById('house-number').value;
-                        const locationText = document.getElementById('selected-location-text').textContent;
-                        addressDetails = `${street}, ${number}\n${locationText}`;
-                    } else {
-                        addressLabel.innerText = 'Modalidade:';
-                        addressDetails = 'Retirar no local';
+                        addressDetails = `${document.getElementById('street-name').value}, ${document.getElementById('house-number').value}\n${document.getElementById('selected-location-text').textContent}`;
                     }
                     document.getElementById('review-address-details').innerText = addressDetails;
-
-                    const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
-                    let paymentInfo = paymentMethod;
-                    if (paymentMethod === 'Dinheiro') {
-                        const needsChange = document.querySelector('input[name="needs-change"]:checked').value;
-                        if (needsChange === 'sim') {
-                            const changeAmount = document.getElementById('change-amount').value;
-                            if (changeAmount) paymentInfo += ` (Troco para R$ ${changeAmount})`;
-                        }
-                    }
-                    document.getElementById('review-payment-method').innerText = paymentInfo;
                     
+                    document.getElementById('review-payment-method').innerText = document.querySelector('input[name="payment"]:checked').value;
                     document.getElementById('review-total-price').innerText = document.getElementById('total-price').innerText;
                     
                     closeModal('address-modal');
@@ -1091,7 +1013,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.disabled = true;
                 btn.textContent = 'Enviando...';
                 
-                await saveOrderToFirebase();
+                await saveOrderToBackend();
 
                 const whatsappUrl = generateWhatsAppMessage();
                 window.open(whatsappUrl, '_blank');
@@ -1099,7 +1021,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 cart = [];
                 updateCart(); 
                 closeModal('review-modal');
-                
                 openModal('submit-modal');
                 
                 btn.disabled = false;
@@ -1111,10 +1032,10 @@ document.addEventListener('DOMContentLoaded', () => {
         customModal.querySelector('#customization-form').addEventListener('change', enforceSelectionLimits);
         customModal.addEventListener('click', (e) => {
             if (e.target.id === 'add-custom-to-cart-btn') addCustomizedItemToCart();
-            if (e.target.matches('#decrease-custom-quantity, #increase-custom-quantity')) {
+            if (e.target.matches('.quantity-btn')) {
                 let qty = currentCustomizingProduct.quantity;
-                if (e.target.id === 'decrease-custom-quantity' && qty > 1) qty--;
-                else if (e.target.id === 'increase-custom-quantity') qty++;
+                if (e.target.dataset.action === 'decrease' && qty > 1) qty--;
+                else if (e.target.dataset.action === 'increase') qty++;
                 currentCustomizingProduct.quantity = qty;
                 document.getElementById('custom-quantity').textContent = qty;
                 updateCustomPrice();
@@ -1127,8 +1048,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         handleDeliveryTypeChange();
-        
-        console.log("Inicialização de eventos concluída.");
     }
 
     initialize();
