@@ -160,19 +160,22 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const finishedOrders = allOrdersCache.filter(order => order.data.status !== 'novo');
         
-        // ======================= INÍCIO DA CORREÇÃO =======================
+        // ======================= INÍCIO DA CORREÇÃO DEFINITIVA =======================
         const results = finishedOrders.filter(order => {
-            // Garante que 'orderId' e 'customerName' nunca sejam 'undefined'
+            // Garante que os campos principais nunca sejam 'undefined'
             const orderId = order.data.orderId || '';
             const customerName = (order.data.customer && order.data.customer.name) ? order.data.customer.name : (order.data.customerName || '');
+            const printerText = order.data.printerFriendlyText || '';
             
-            // Agora as buscas são seguras
+            // Agora as buscas são seguras e abrangentes
             const orderIdMatch = orderId.includes(searchTerm);
             const customerNameMatch = customerName.toLowerCase().includes(searchTerm);
+            // Adiciona a busca no texto de impressão para encontrar pedidos antigos
+            const printerTextMatch = printerText.toLowerCase().includes(searchTerm);
             
-            return orderIdMatch || customerNameMatch;
+            return orderIdMatch || customerNameMatch || printerTextMatch;
         });
-        // ======================== FIM DA CORREÇÃO =========================
+        // ======================== FIM DA CORREÇÃO DEFINITIVA =========================
 
         renderSearchResults(results);
     });
@@ -244,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <p>
                 <strong>Pedido #${orderData.orderId || ''}</strong> | Data: ${date} | Total: R$ ${totalValue}
                 <br>
-                Status: <strong>${orderData.status}</strong>
+                Status: <strong>${orderData.status || 'sem status'}</strong>
             </p>
         `;
         return card;
