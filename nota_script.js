@@ -1,7 +1,7 @@
-// nota_script.js (Com fluxo de status inteligente por tipo de pedido)
+// nota_script.js (Com fluxo de status inteligente e renderização aprimorada)
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- ELEMENTOS DA UI E CONFIGURAções ---
+    // --- ELEMENTOS DA UI E CONFIGURAÇÕES ---
     const BACKEND_URL = 'https://acai-do-heitor-backend.onrender.com';
     const views = document.querySelectorAll('.view');
     const navItems = document.querySelectorAll('.nav-item');
@@ -54,8 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) throw new Error('Falha ao atualizar o pedido.');
 
-            // Recarrega a lista para refletir a mudança
-            await fetchAndRenderOrders();
+            await fetchAndRenderOrders(); // Recarrega a lista para refletir a mudança
 
         } catch (error) {
             console.error("Erro ao atualizar status:", error);
@@ -65,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- FUNÇÃO PARA BUSCAR E RENDERIZAR PEDIDOS ATIVOS ---
+    // --- FUNÇÃO PARA BUSCAR E RENDERIZAR PEDIDOS ---
     async function fetchAndRenderOrders() {
         try {
             const response = await fetch(`${BACKEND_URL}/orders`);
@@ -73,9 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             allOrdersCache = await response.json();
             
-            // A tela principal agora mostra todos os pedidos que não estão concluídos
             const activeOrders = allOrdersCache.filter(order => order.data.status !== 'concluido');
             
+            // Lógica de notificação sonora para novos pedidos
             const newOrderIds = new Set(activeOrders.filter(o => o.data.status === 'novo').map(o => o.id));
             if (knownOrderIds.size > 0 && newOrderIds.size > knownOrderIds.size && soundEnabled) {
                 notificationSound.play().catch(e => console.error("Erro ao tocar notificação:", e));
@@ -83,18 +82,28 @@ document.addEventListener('DOMContentLoaded', () => {
             knownOrderIds = newOrderIds;
 
             updateOrderListView(activeOrders);
+
         } catch (error) {
             console.error("Erro ao buscar pedidos:", error);
-            newOrdersView.innerHTML = '<div class="message-box">Erro ao conectar com o servidor.</div>';
+            newOrdersView.innerHTML = '<div class="message-box">Erro ao conectar com o servidor. Tente novamente.</div>';
         }
     }
     
-    // --- FUNÇÃO PARA ATUALIZAR A LISTA DE PEDIDOS NA TELA ---
+    // --- FUNÇÃO PARA ATUALIZAR A LISTA DE PEDIDOS (COM CORREÇÃO DO BUG) ---
     function updateOrderListView(activeOrders) {
         orderCountBadge.textContent = activeOrders.length;
-        orderCountBadge.style.display = activeOrders.length > 0 ? 'block' : 'none';
+        orderCountBadge.style.display = activeOrders.length > 0 ? 'inline-block' : 'none';
 
-        newOrdersView.innerHTML = '';
+        // ======================= INÍCIO DA CORREÇÃO =======================
+        // 1. Memoriza quais cards estão abertos (expandidos) antes de atualizar
+        const expandedIds = new Set();
+        document.querySelectorAll('.order-card.expanded').forEach(card => {
+            expandedIds.add(card.dataset.id);
+        });
+
+        newOrdersView.innerHTML = ''; // Limpa a visualização atual
+        // ======================== FIM DA CORREÇÃO =========================
+
         if (activeOrders.length === 0) {
             newOrdersView.innerHTML = '<div class="message-box">Nenhum pedido ativo no momento.</div>';
             return;
@@ -113,6 +122,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         activeOrders.forEach(order => {
             const card = createNewOrderCard(order.id, order.data);
+
+            // ======================= INÍCIO DA CORREÇÃO =======================
+            // 2. Se o card estava aberto antes, ele é reaberto na nova lista
+            if (expandedIds.has(order.id)) {
+                card.classList.add('expanded');
+            }
+            // ======================== FIM DA CORREÇÃO =========================
+            
             newOrdersView.appendChild(card);
         });
     }
@@ -132,14 +149,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (button.classList.contains('copy-btn')) {
             const textToCopy = button.closest('.order-card').querySelector('pre').textContent;
             const success = await copyToClipboard(textToCopy);
+            button.dataset.originalHtml = button.innerHTML;
             if (success) {
                 button.innerHTML = '<i class="fas fa-paste"></i> Copiado!';
-                setTimeout(() => { button.innerHTML = '<i class="fas fa-copy"></i> Copiar'; }, 2000);
+                setTimeout(() => { button.innerHTML = '<i class="fas fa-copy"></i> Copiar Pedido'; }, 2000);
             }
         }
     });
 
-    // Função de busca (sem alterações)
+    // --- FUNÇÕES DE BUSCA (sem alteração de lógica) ---
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const searchTerm = searchInput.value.trim().toLowerCase();
@@ -154,11 +172,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     function renderSearchResults(results) {
-        if (results.length === 0) {
-            searchResultsContainer.innerHTML = '<div class="message-box">Nenhum pedido encontrado.</div>';
-            return;
-        }
-        searchResultsContainer.innerHTML = '';
+        searchResultsContainer.innerHTML = results.length === 0
+            ? '<div class="message-box">Nenhum pedido encontrado.</div>'
+            : '';
         results
             .sort((a, b) => b.data.timestamp._seconds - a.data.timestamp._seconds)
             .forEach(order => {
@@ -167,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    // --- FUNÇÕES DE CRIAÇÃO DE HTML ---
+    // --- FUNÇÕES DE CRIAÇÃO DE HTML (Atualizadas para o novo layout) ---
     function createNewOrderCard(orderId, orderData) {
         const date = new Date(orderData.timestamp._seconds * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         const customerName = (orderData.customer && orderData.customer.name) ? orderData.customer.name : (orderData.customerName || 'Cliente não informado');
@@ -175,14 +191,12 @@ document.addEventListener('DOMContentLoaded', () => {
         card.className = `order-card status-${orderData.status}`;
         card.dataset.id = orderId;
 
-        // ======================= INÍCIO DA ALTERAÇÃO =======================
         // Lógica de botões inteligente baseada no tipo de pedido (deliveryMode)
         let actionButtonHTML = '';
         if (orderData.status === 'novo') {
-            const buttonText = `<i class="fas fa-fire-alt"></i> Em Preparo`;
+            const buttonText = `<i class="fas fa-fire-alt"></i> Mover para Preparo`;
             actionButtonHTML = `<button class="status-btn preparo" data-next-status="preparo" data-original-html='${buttonText}'>${buttonText}</button>`;
         } else if (orderData.status === 'preparo') {
-            // Se for delivery, mostra "Saiu p/ Entrega". Se for retirada, mostra "Pronto p/ Retirada".
             if (orderData.deliveryMode === 'delivery') {
                 const buttonText = `<i class="fas fa-motorcycle"></i> Saiu p/ Entrega`;
                 actionButtonHTML = `<button class="status-btn entrega" data-next-status="entrega" data-original-html='${buttonText}'>${buttonText}</button>`;
@@ -191,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 actionButtonHTML = `<button class="status-btn retirada" data-next-status="pronto_retirada" data-original-html='${buttonText}'>${buttonText}</button>`;
             }
         } else if (orderData.status === 'entrega' || orderData.status === 'pronto_retirada') {
-            const buttonText = `<i class="fas fa-check-double"></i> Concluir`;
+            const buttonText = `<i class="fas fa-check-double"></i> Concluir Pedido`;
             actionButtonHTML = `<button class="status-btn concluido" data-next-status="concluido" data-original-html='${buttonText}'>${buttonText}</button>`;
         }
         
@@ -199,19 +213,20 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="card-summary">
                 <div class="card-info">
                     <h3>${customerName}</h3>
-                    <span>#${orderData.orderId || ''} - ${date}</span>
+                    <span>#${orderData.orderId || ''} &bull; ${date}</span>
                 </div>
                 <div class="card-status-indicator">${orderData.status.replace('_', ' ')}</div>
             </div>
             <div class="card-details">
-                <pre>${orderData.printerFriendlyText || 'Texto não disponível.'}</pre>
-                <div class="card-actions">
-                    <button class="copy-btn"><i class="fas fa-copy"></i> Copiar</button>
-                    ${actionButtonHTML}
+                <div class="details-content">
+                    <pre>${orderData.printerFriendlyText || 'Texto do pedido não disponível.'}</pre>
+                    <div class="card-actions">
+                        ${actionButtonHTML}
+                        <button class="copy-btn"><i class="fas fa-copy"></i> Copiar Pedido</button>
+                    </div>
                 </div>
             </div>
         `;
-        // ======================== FIM DA ALTERAÇÃO =========================
 
         card.querySelector('.card-summary').addEventListener('click', () => card.classList.toggle('expanded'));
         return card;
@@ -219,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function createSearchResultCard(orderId, orderData) {
         const date = new Date(orderData.timestamp._seconds * 1000).toLocaleDateString('pt-BR');
-        const totalValue = (orderData.totals && typeof orderData.totals.total !== 'undefined') ? orderData.totals.total.toFixed(2) : '0.00';
+        const totalValue = (orderData.totals && typeof orderData.totals.total !== 'undefined') ? orderData.totals.total.toFixed(2).replace('.',',') : '0,00';
         const customerName = (orderData.customer && orderData.customer.name) ? orderData.customer.name : (orderData.customerName || 'Cliente não informado');
 
         const card = document.createElement('div');
@@ -227,14 +242,14 @@ document.addEventListener('DOMContentLoaded', () => {
         card.innerHTML = `
             <h3>${customerName}</h3>
             <p>
-                <strong>Pedido #${orderData.orderId || ''}</strong> | Data: ${date} | Total: R$ ${totalValue}
-                <br>
-                Status: <strong>${orderData.status || 'sem status'}</strong>
+                <strong>Pedido #${orderData.orderId || ''}</strong> <br>
+                Data: ${date} | Total: R$ ${totalValue} | Status: <strong>${orderData.status || 'sem status'}</strong>
             </p>
         `;
         return card;
     }
 
+    // --- FUNÇÕES AUXILIARES ---
     async function copyToClipboard(text) {
         try {
             if (navigator.clipboard && window.isSecureContext) {

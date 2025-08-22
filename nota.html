@@ -7,27 +7,30 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
         :root {
-            --primary-color: #4e008d;
-            --background-color: #f0f2f5;
+            --primary-color: #6a1b9a; /* Roxo mais vibrante */
+            --background-color: #f4f5f7; /* Fundo mais claro e suave */
             --card-background: #ffffff;
-            --text-dark: #1c1e21;
-            --text-light: #606770;
-            --border-color: #dee2e6;
-            --success-color: #198754;
-            --danger-color: #dc3545;
-            --blue-color: #0d6efd;
+            --text-dark: #212529;
+            --text-light: #6c757d;
+            --border-color: #e9ecef;
+            --status-novo: #0d6efd;
+            --status-preparo: #ffc107;
+            --status-entrega: #198754;
+            --status-concluido: #6c757d;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             background-color: var(--background-color);
             color: var(--text-dark);
-            padding-top: 60px; /* Espaço para o header fixo */
-            padding-bottom: 70px; /* Espaço para a nav fixa */
+            padding-top: 60px;
+            padding-bottom: 70px;
         }
+
+        /* Header e Navegação */
         .header-fixed {
             background-color: var(--card-background);
-            padding: 0 15px;
+            padding: 0 16px;
             position: fixed;
             top: 0;
             left: 0;
@@ -38,85 +41,144 @@
             align-items: center;
             justify-content: space-between;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-bottom: 1px solid var(--border-color);
         }
-        .header-fixed h1 { font-size: 1.25rem; color: var(--primary-color); }
+        .header-fixed h1 { font-size: 1.3rem; font-weight: 700; color: var(--primary-color); }
         #order-count-badge {
-            background-color: var(--danger-color);
+            background-color: var(--primary-color);
             color: white;
-            font-size: 0.9rem;
-            font-weight: bold;
-            padding: 5px 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 5px 12px;
             border-radius: 20px;
+            min-width: 28px;
+            text-align: center;
         }
-        main { padding: 15px; }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background-color: var(--card-background);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+            border-top: 1px solid var(--border-color);
+            z-index: 100;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-light);
+            font-size: 0.8rem;
+            font-weight: 500;
+            border: none;
+            background: none;
+            flex: 1;
+            padding: 10px 0;
+            transition: color 0.2s ease;
+        }
+        .nav-item i { font-size: 1.6rem; }
+        .nav-item.active { color: var(--primary-color); }
+
+        /* Views */
+        main { padding: 16px; }
         .view { display: none; }
         .view.active { display: block; animation: viewFadeIn 0.3s ease; }
         @keyframes viewFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Estilos dos Cards de Novos Pedidos */
+        /* Cards de Pedido (Novo Estilo) */
         .order-card {
             background-color: var(--card-background);
-            border-radius: 12px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-radius: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            border: 1px solid var(--border-color);
             transition: all 0.3s ease;
-            overflow: hidden;
+            opacity: 1;
+            transform: scale(1);
         }
-        .order-card.removing { opacity: 0; transform: scale(0.95); }
-        .card-summary { padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-        .card-info h3 { font-size: 1.15rem; margin-bottom: 2px; }
+        .order-card.removing { opacity: 0; transform: scale(0.95); } /* Animação de remoção */
+
+        .card-summary { padding: 16px; display: flex; justify-content: space-between; align-items: flex-start; cursor: pointer; }
+        .card-info h3 { font-size: 1.2rem; font-weight: 600; margin-bottom: 4px; }
         .card-info span { font-size: 0.9rem; color: var(--text-light); }
-        .card-status { text-align: right; }
-        .total-badge { font-size: 1.1rem; font-weight: bold; color: var(--success-color); display: block; margin-bottom: 4px; }
-        .delivery-type { font-size: 0.9rem; color: var(--text-light); }
-        .delivery-type i { margin-right: 5px; }
-        .card-details { max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.4s ease; }
-        .order-card.expanded .card-details { max-height: 1200px; padding: 15px; border-top: 1px solid var(--border-color); }
-        .card-details pre { white-space: pre-wrap; font-family: inherit; font-size: 0.95rem; line-height: 1.6; }
-        .card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
-        .card-actions button { padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background-color 0.2s; }
-        .copy-btn { background-color: var(--blue-color); color: white; }
-        .move-btn { background-color: var(--success-color); color: white; }
+        .card-status-indicator {
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: white;
+            text-transform: capitalize;
+            flex-shrink: 0;
+            margin-left: 10px;
+        }
+        /* Cores por status */
+        .status-novo .card-status-indicator { background-color: var(--status-novo); }
+        .status-preparo .card-status-indicator { background-color: var(--status-preparo); color: var(--text-dark); }
+        .status-entrega .card-status-indicator,
+        .status-pronto_retirada .card-status-indicator { background-color: var(--status-entrega); }
 
-        /* Estilos da View de Busca */
-        #search-form { display: flex; gap: 10px; margin-bottom: 20px; }
-        #search-input { flex: 1; padding: 12px; font-size: 1rem; border: 1px solid var(--border-color); border-radius: 8px; }
-        #search-button { padding: 0 20px; border: none; border-radius: 8px; background-color: var(--primary-color); color: white; font-size: 1.1rem; }
-        .result-card { background-color: var(--card-background); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
-        .message-box { text-align: center; padding: 40px; color: var(--text-light); }
-
-        /* Navegação Inferior */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background-color: var(--card-background); display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); z-index: 100; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-light); font-size: 0.8rem; font-weight: 500; border: none; background: none; flex: 1; padding: 10px 0; }
-        .nav-item i { font-size: 1.5rem; }
-        .nav-item.active { color: var(--primary-color); }
-        
-        #sound-activation-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
+        .card-details { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-in-out; }
+        .order-card.expanded .card-details { max-height: 1200px; }
+        .details-content { padding: 0 16px 16px; border-top: 1px solid var(--border-color); }
+        .details-content pre {
+            white-space: pre-wrap;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            background-color: var(--background-color);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+        .card-actions { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 16px; }
+        .card-actions button {
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
             display: flex;
-            justify-content: center;
             align-items: center;
-            z-index: 1001;
-            transition: opacity 0.3s ease;
+            justify-content: center;
+            gap: 8px;
+            transition: background-color 0.2s, transform 0.1s;
+            color: white;
+        }
+        .card-actions button:active { transform: scale(0.98); }
+        .copy-btn { background-color: var(--text-light); }
+
+        /* Cores dos botões de ação */
+        .status-btn.preparo { background-color: var(--status-preparo); color: var(--text-dark); }
+        .status-btn.entrega, .status-btn.retirada { background-color: var(--status-entrega); }
+        .status-btn.concluido { background-color: var(--primary-color); }
+
+        /* View de Busca */
+        #search-form { display: flex; gap: 10px; margin-bottom: 20px; }
+        #search-input { flex: 1; padding: 14px; font-size: 1rem; border: 1px solid var(--border-color); border-radius: 12px; }
+        #search-button { padding: 0 20px; border: none; border-radius: 12px; background-color: var(--primary-color); color: white; font-size: 1.1rem; }
+        .result-card { background-color: var(--card-background); border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--border-color); }
+        .message-box { text-align: center; padding: 40px; color: var(--text-light); font-size: 1rem; }
+
+        /* Overlay de Som */
+        #sound-activation-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1001; transition: opacity 0.3s ease;
         }
         #sound-activation-button {
-            padding: 20px 30px;
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--primary-color);
-            background-color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
+            padding: 20px 30px; font-size: 1.2rem; font-weight: 600;
+            color: var(--primary-color); background-color: white;
+            border: none; border-radius: 50px; cursor: pointer;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            display: flex;
-            align-items: center;
-            gap: 15px;
+            display: flex; align-items: center; gap: 15px;
         }
     </style>
 </head>
@@ -150,7 +212,7 @@
     <footer class="bottom-nav">
         <button class="nav-item active" data-view="new-orders-view">
             <i class="fas fa-receipt"></i>
-            <span>Novos</span>
+            <span>Pedidos</span>
         </button>
         <button class="nav-item" data-view="search-view">
             <i class="fas fa-history"></i>

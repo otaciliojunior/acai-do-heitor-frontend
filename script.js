@@ -30,22 +30,18 @@ document.addEventListener('DOMContentLoaded', () => {
     let trackingInterval = null;
 
 
-    // ======================================================================
-    // --- INÍCIO: NOVAS FUNÇÕES DE ACOMPANHAMENTO DE PEDIDO ---
-    // ======================================================================
-
+    // --- FUNÇÕES DE ACOMPANHAMENTO DE PEDIDO ---
     function startOrderTracking(orderId, orderNumber, deliveryMode) {
         activeOrderId = orderId;
         localStorage.setItem('activeOrderId', orderId);
         localStorage.setItem('activeOrderNumber', orderNumber);
-        localStorage.setItem('activeOrderMode', deliveryMode); // Salva o modo
+        localStorage.setItem('activeOrderMode', deliveryMode);
 
         const trackingOrderIdElement = document.getElementById('tracking-order-id');
         if (trackingOrderIdElement) {
             trackingOrderIdElement.textContent = `Acompanhando Pedido #${orderNumber}`;
         }
         
-        // Antes de abrir o modal, ajusta a UI
         setupTrackingUI(deliveryMode);
         openModal('tracking-modal');
         
@@ -67,7 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Status do pedido não pôde ser verificado.');
             }
             const data = await response.json();
-            // Agora recebemos { status, orderId, deliveryMode }
             updateTrackingUI(data.status, data.deliveryMode);
         } catch (error) {
             console.error("Erro ao verificar status:", error);
@@ -75,7 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Mostra/esconde as etapas corretas ANTES de qualquer atualização
     function setupTrackingUI(deliveryMode) {
         const deliveryStep = document.querySelector('.timeline-step[data-mode="delivery-only"]');
         const pickupStep = document.querySelector('.timeline-step[data-mode="pickup-only"]');
@@ -84,26 +78,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (deliveryMode === 'delivery') {
                 deliveryStep.style.display = 'flex';
                 pickupStep.style.display = 'none';
-            } else { // 'pickup'
+            } else { 
                 deliveryStep.style.display = 'none';
                 pickupStep.style.display = 'flex';
             }
         }
     }
 
-    // Função que controla a nova UI de Acompanhamento
     function updateTrackingUI(status, deliveryMode) {
         const timelineContainer = document.querySelector('.tracking-timeline');
         if (!timelineContainer) return;
         
-        // Garante que a UI esteja configurada para o modo correto
         setupTrackingUI(deliveryMode);
 
         const statuses = deliveryMode === 'delivery'
             ? ['novo', 'preparo', 'entrega', 'concluido']
             : ['novo', 'preparo', 'pronto_retirada', 'concluido'];
         
-        // Limpa classes antigas e aplica a classe de progresso correta
         timelineContainer.className = 'tracking-timeline';
         const progressPercentage = {
             'novo': '0%',
@@ -116,7 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let statusIndex = statuses.indexOf(status);
 
-        // Percorre cada etapa da timeline
         document.querySelectorAll('.timeline-step').forEach(step => {
             const stepStatus = step.dataset.status;
             const stepIndex = statuses.indexOf(stepStatus);
@@ -177,10 +167,77 @@ document.addEventListener('DOMContentLoaded', () => {
     function showToastNotification(message, type='success') { const toast=document.getElementById('toast-notification'); toast.textContent=message; toast.className=''; toast.classList.add('show', type); setTimeout(() => toast.classList.remove('show'), 3500); }
     function setupScrollAnimations() { const observerOptions={root:null,rootMargin:'0px',threshold:0.1}; const observerCallback=(entries, observer) => { entries.forEach((entry, index) => { if (entry.isIntersecting) { entry.target.style.transitionDelay=`${index*100}ms`; entry.target.classList.add('is-visible'); observer.unobserve(entry.target); } }); }; const scrollObserver=new IntersectionObserver(observerCallback, observerOptions); document.querySelectorAll('.animate-on-scroll').forEach(el => scrollObserver.observe(el)); }
     function handleScrollEffects() { const heroTexts=document.querySelectorAll('.hero-text'); const scrollPosition=window.scrollY; const fadeOutDistance=400; if (scrollPosition < fadeOutDistance) { const opacity=1 - (scrollPosition/fadeOutDistance); const translateX=-scrollPosition/5; heroTexts.forEach(text => { text.style.opacity=opacity; text.style.transform=`translateX(${translateX}px)`; }); } else { heroTexts.forEach(text => { text.style.opacity=0; text.style.transform=`translateX(${-fadeOutDistance/5}px)`; }); } }
-    function generateWhatsAppMessage() { const name=document.getElementById('customer-name').value; const phone=document.getElementById('customer-phone').value; const deliveryMode=document.querySelector('input[name="delivery-type"]:checked').value; let addressInfo=''; if (deliveryMode==='delivery') { const street=document.getElementById('street-name').value; const number=document.getElementById('house-number').value; const locationText=document.getElementById('selected-location-text').textContent; addressInfo +=`📍 *Endereço de Entrega:*\n`; addressInfo +=`${street}, ${number}\n`; addressInfo +=`*Localidade:* ${locationText}\n`; } else { addressInfo=`🛵 *Retirar no Local*\n`; } const paymentMethod=document.querySelector('input[name="payment"]:checked').value; let paymentInfo=paymentMethod; if (paymentMethod==='Dinheiro') { const needsChange=document.querySelector('input[name="needs-change"]:checked').value; if (needsChange==='sim') { const changeAmount=document.getElementById('change-amount').value; if (changeAmount) { paymentInfo +=` (Levar troco para R$ ${parseFloat(changeAmount).toFixed(2)})`; } } } const orderId=Date.now().toString().slice(-6); const now=new Date(); const timestamp=`${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}`; let message=`📦 *Novo Pedido #${orderId}*\n\n`; message +=`👤 *Cliente:*\n${name}\n\n`; message +=`📞 *WhatsApp:*\n+${phone.replace(/\D/g, '')}\n\n`; message +=addressInfo; message +=`\n------------------------------------\n`; message +=`🍨 *Itens do pedido:*\n`; cart.forEach(item => { message +=`\n✅ *${item.quantity}x ${item.name}* – R$${(item.price*item.quantity).toFixed(2)}\n`; if (item.customizations.length > 0) { message +=`  • _${item.customizations.join(', ')}_\n`; } }); const subtotal=cart.reduce((sum, item) => sum+(item.price*item.quantity), 0); let currentDeliveryFee=0; if (deliveryMode==='delivery') { const locationInput=document.getElementById('customer-location'); if (locationInput && locationInput.value) { currentDeliveryFee=parseFloat(locationInput.value); } } const total=subtotal+currentDeliveryFee; message +=`\n------------------------------------\n`; message +=`💵 *Pagamento:*\n`; message +=`Subtotal: R$${subtotal.toFixed(2)}\n`; if (deliveryMode==='delivery') { message +=`Entrega: R$${currentDeliveryFee.toFixed(2)}\n`; } message +=`*Total: R$${total.toFixed(2)}*\n\n`; message +=`*Forma de Pagamento:* ${paymentInfo}\n\n`; message +=`${timestamp}`; return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`; }
-    function generatePrinterFriendlyText(orderId) { const name=document.getElementById('customer-name').value; const deliveryMode=document.querySelector('input[name="delivery-type"]:checked').value; let addressInfo=''; if (deliveryMode==='delivery') { const street=document.getElementById('street-name').value; const number=document.getElementById('house-number').value; const locationText=document.getElementById('selected-location-text').textContent.split('–')[0].trim(); addressInfo +=`Endereco de Entrega:\n`; addressInfo +=`${street}, ${number}\n`; addressInfo +=`Localidade: ${locationText}\n`; } else { addressInfo=`Retirar no Local\n`; } const paymentMethod=document.querySelector('input[name="payment"]:checked').value; let paymentInfo=paymentMethod; if (paymentMethod==='Dinheiro') { const needsChange=document.querySelector('input[name="needs-change"]:checked').value; if (needsChange==='sim') { const changeAmount=document.getElementById('change-amount').value; if (changeAmount) { paymentInfo +=` (Troco para R$ ${parseFloat(changeAmount).toFixed(2)})`; } } } const now=new Date(); const timestamp=`${now.toLocaleDateString('pt-BR')} as ${now.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}`; let text=`Novo Pedido #${orderId}\n\n`; text +=`Cliente: ${name}\n\n`; text +=addressInfo; text +=`\n--------------------------------\n`; text +=`Itens do pedido:\n`; cart.forEach(item => { text +=`\n* ${item.quantity}x ${item.name} - R$${(item.price*item.quantity).toFixed(2)}\n`; if (item.customizations.length > 0) { text +=`  Com: ${item.customizations.join(', ')}\n`; } }); const subtotal=cart.reduce((sum, item) => sum+(item.price*item.quantity), 0); let currentDeliveryFee=0; if (deliveryMode==='delivery') { const locationInput=document.getElementById('customer-location'); if (locationInput && locationInput.value) { currentDeliveryFee=parseFloat(locationInput.value); } } const total=subtotal+currentDeliveryFee; text +=`\n--------------------------------\n`; text +=`Pagamento:\n`; text +=`Subtotal: R$${subtotal.toFixed(2)}\n`; if (deliveryMode==='delivery') { text +=`Entrega: R$${currentDeliveryFee.toFixed(2)}\n`; } text +=`Total: R$${total.toFixed(2)}\n\n`; text +=`Forma de Pagamento: ${paymentInfo}\n\n`; text +=`${timestamp}`; return text; }
+    
+    // ======================= INÍCIO DA ALTERAÇÃO =======================
+    // Esta função permanece, pois é usada para gerar a mensagem que vai para o WhatsApp.
+    function generateWhatsAppMessage() { const name=document.getElementById('customer-name').value; const phone=document.getElementById('customer-phone').value; const deliveryMode=document.querySelector('input[name="delivery-type"]:checked').value; let addressInfo=''; if (deliveryMode==='delivery') { const street=document.getElementById('street-name').value; const number=document.getElementById('house-number').value; const locationText=document.getElementById('selected-location-text').textContent; addressInfo +=`📍 *Endereço de Entrega:*\n`; addressInfo +=`${street}, ${number}\n`; addressInfo +=`*Localidade:* ${locationText}\n`; } else { addressInfo=`🛵 *Retirar no Local*\n`; } const paymentMethod=document.querySelector('input[name="payment"]:checked').value; let paymentInfo=paymentMethod; if (paymentMethod==='Dinheiro') { const needsChange=document.querySelector('input[name="needs-change"]:checked').value; if (needsChange==='sim') { const changeAmount=document.getElementById('change-amount').value; if (changeAmount) { paymentInfo +=` (Levar troco para R$ ${parseFloat(changeAmount).toFixed(2)})`; } } } const orderId=Date.now().toString().slice(-6); const now=new Date(); const timestamp=`${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}`; let message=`📦 *Pedido #${orderId}*\n\n`; message +=`👤 *Cliente:*\n${name}\n\n`; message +=`📞 *WhatsApp:*\n+${phone.replace(/\D/g, '')}\n\n`; message +=addressInfo; message +=`\n------------------------------------\n`; message +=`🍨 *Itens do pedido:*\n`; cart.forEach(item => { message +=`\n✅ *${item.quantity}x ${item.name}* – R$${(item.price*item.quantity).toFixed(2)}\n`; if (item.customizations.length > 0) { message +=`  • _${item.customizations.join(', ')}_\n`; } }); const subtotal=cart.reduce((sum, item) => sum+(item.price*item.quantity), 0); let currentDeliveryFee=0; if (deliveryMode==='delivery') { const locationInput=document.getElementById('customer-location'); if (locationInput && locationInput.value) { currentDeliveryFee=parseFloat(locationInput.value); } } const total=subtotal+currentDeliveryFee; message +=`\n------------------------------------\n`; message +=`💵 *Pagamento:*\n`; message +=`Subtotal: R$${subtotal.toFixed(2)}\n`; if (deliveryMode==='delivery') { message +=`Entrega: R$${currentDeliveryFee.toFixed(2)}\n`; } message +=`*Total: R$${total.toFixed(2)}*\n\n`; message +=`*Forma de Pagamento:* ${paymentInfo}\n\n`; message +=`${timestamp}`; return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`; }
+    
+    // Esta função foi atualizada para gerar um texto mais limpo para a impressora.
+    function generatePrinterFriendlyText(orderId) {
+        const name = document.getElementById('customer-name').value;
+        const phone = document.getElementById('customer-phone').value;
+        const deliveryMode = document.querySelector('input[name="delivery-type"]:checked').value;
+
+        let text = `PEDIDO #${orderId}\n`;
+        text += `Cliente: ${name}\n`;
+        text += `WhatsApp: ${phone}\n\n`;
+
+        if (deliveryMode === 'delivery') {
+            const street = document.getElementById('street-name').value;
+            const number = document.getElementById('house-number').value;
+            const locationText = document.getElementById('selected-location-text').textContent.split('–')[0].trim();
+            
+            text += `*** ENTREGA ***\n`;
+            text += `Local: ${locationText}\n`;
+            text += `Rua: ${street}, N°: ${number}\n`;
+        } else {
+            text += `*** RETIRADA NO LOCAL ***\n`;
+        }
+        
+        text += `--------------------------------\n`;
+        
+        cart.forEach(item => {
+            text += `${item.quantity}x ${item.name}\n`;
+            if (item.customizations.length > 0) {
+                text += `  -> ${item.customizations.join(', ')}\n`;
+            }
+        });
+
+        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        let currentDeliveryFee = 0;
+        if (deliveryMode === 'delivery') {
+            const locationInput = document.getElementById('customer-location');
+            if (locationInput && locationInput.value) {
+                currentDeliveryFee = parseFloat(locationInput.value);
+            }
+        }
+        const total = subtotal + currentDeliveryFee;
+        const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
+
+        text += `--------------------------------\n`;
+        text += `TOTAL: R$ ${total.toFixed(2)}\n`;
+        text += `PAGAMENTO: ${paymentMethod}\n`;
+
+        if (paymentMethod === 'Dinheiro') {
+            const needsChange = document.querySelector('input[name="needs-change"]:checked').value;
+            if (needsChange === 'sim') {
+                const changeAmount = document.getElementById('change-amount').value;
+                if (changeAmount) {
+                    text += `(Troco para R$ ${parseFloat(changeAmount).toFixed(2)})\n`;
+                }
+            }
+        }
+        
+        const now = new Date();
+        text += `\n${now.toLocaleDateString('pt-BR')} as ${now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}`;
+        
+        return text;
+    }
+    // ======================== FIM DA ALTERAÇÃO =========================
+    
     async function saveOrderToBackend() {
         const orderId = Date.now().toString().slice(-6);
+        // A função de gerar texto para impressão agora é chamada aqui
         const printerText = generatePrinterFriendlyText(orderId);
         const deliveryMode = document.querySelector('input[name="delivery-type"]:checked').value;
         let deliveryFee = 0;
@@ -201,6 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
             paymentMethod: document.querySelector('input[name="payment"]:checked').value,
             items: cart,
             totals: { subtotal: subtotal, deliveryFee: deliveryFee, total: subtotal + deliveryFee },
+            // O texto limpo é salvo no banco de dados
             printerFriendlyText: printerText,
         };
 
@@ -301,7 +359,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.removeItem('orderState');
                     updateCart(); 
                     closeModal('review-modal');
-                    // Inicia o acompanhamento passando o deliveryMode
                     startOrderTracking(newOrder.id, newOrder.data.orderId, newOrder.data.deliveryMode);
                 } else {
                     closeModal('review-modal');
