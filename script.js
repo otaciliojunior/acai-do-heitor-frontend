@@ -19,7 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM carregado. Iniciando script...");
 
     // --- 1. CONFIGURAÇÕES ---
-    const API_URL = 'https://acai-do-heitor-backend.onrender.com';
+    // **NOVO**: URL do backend para centralizar a comunicação
+    const BACKEND_URL = 'https://acai-do-heitor-backend.onrender.com';
     const WHATSAPP_NUMBER = "5584991393356";
     const PRODUCTS_LIMIT = 6;
     const ORDER_EXPIRATION_MINUTES = 20;
@@ -628,7 +629,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
     }
     
-    // NOVO: Função para gerar o texto do pedido sem emojis para a impressora
     function generatePrinterFriendlyText(orderId) {
         const name = document.getElementById('customer-name').value;
         const phone = document.getElementById('customer-phone').value;
@@ -706,50 +706,68 @@ document.addEventListener('DOMContentLoaded', () => {
         return text;
     }
 
-    // NOVO: Função para salvar o pedido no Firebase
+    // ==================================================================
+    // **INÍCIO DA CORREÇÃO PRINCIPAL**
+    // Função alterada para enviar o pedido para o seu backend em vez de direto para o Firebase
+    // ==================================================================
     async function saveOrderToFirebase() {
+        const orderId = Date.now().toString().slice(-6);
+        const printerText = generatePrinterFriendlyText(orderId);
+        const deliveryMode = document.querySelector('input[name="delivery-type"]:checked').value;
+        let deliveryFee = 0;
+        if (deliveryMode === 'delivery') {
+             const locationInput = document.getElementById('customer-location');
+             if (locationInput && locationInput.value) {
+                deliveryFee = parseFloat(locationInput.value);
+             }
+        }
+        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+        // Monta o objeto do pedido com a estrutura correta (aninhando dados do cliente)
+        const orderData = {
+            orderId: orderId,
+            customer: { // Objeto aninhado para dados do cliente
+                name: document.getElementById('customer-name').value,
+                phone: document.getElementById('customer-phone').value,
+            },
+            deliveryMode: deliveryMode,
+            address: deliveryMode === 'delivery' ? {
+                street: document.getElementById('street-name').value,
+                number: document.getElementById('house-number').value,
+                location: document.getElementById('selected-location-text').textContent
+            } : null,
+            paymentMethod: document.querySelector('input[name="payment"]:checked').value,
+            items: cart,
+            totals: {
+                subtotal: subtotal,
+                deliveryFee: deliveryFee,
+                total: subtotal + deliveryFee
+            },
+            printerFriendlyText: printerText,
+        };
+
         try {
-            const orderId = Date.now().toString().slice(-6);
-            const printerText = generatePrinterFriendlyText(orderId);
-
-            const deliveryMode = document.querySelector('input[name="delivery-type"]:checked').value;
-            let deliveryFee = 0;
-            if (deliveryMode === 'delivery') {
-                 const locationInput = document.getElementById('customer-location');
-                 if (locationInput && locationInput.value) {
-                    deliveryFee = parseFloat(locationInput.value);
-                 }
-            }
-            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-            const orderData = {
-                orderId: orderId,
-                customerName: document.getElementById('customer-name').value,
-                customerPhone: document.getElementById('customer-phone').value,
-                deliveryMode: deliveryMode,
-                address: deliveryMode === 'delivery' ? {
-                    street: document.getElementById('street-name').value,
-                    number: document.getElementById('house-number').value,
-                    location: document.getElementById('selected-location-text').textContent
-                } : null,
-                paymentMethod: document.querySelector('input[name="payment"]:checked').value,
-                items: cart, // Salva o carrinho completo
-                totals: {
-                    subtotal: subtotal,
-                    deliveryFee: deliveryFee,
-                    total: subtotal + deliveryFee
+            // Envia os dados para o seu backend usando fetch
+            const response = await fetch(`${BACKEND_URL}/orders`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
                 },
-                printerFriendlyText: printerText,
-                status: 'new', // Status inicial do pedido
-                timestamp: firebase.firestore.FieldValue.serverTimestamp() // Usa o timestamp do servidor
-            };
-            
-            await db.collection('pedidos').add(orderData);
-            console.log("Pedido salvo no Firebase com sucesso!");
+                body: JSON.stringify(orderData),
+            });
+
+            if (!response.ok) {
+                // Se o backend retornar um erro, lança uma exceção
+                throw new Error('Falha ao enviar o pedido para o servidor.');
+            }
+
+            const result = await response.json();
+            console.log("Pedido salvo com sucesso via backend!", result);
 
         } catch (error) {
-            console.error("Erro ao salvar pedido no Firebase: ", error);
-            // Mesmo que falhe, o envio para o WhatsApp continua
+            console.error("Erro ao salvar pedido via backend: ", error);
+            // **NOVO**: Informa o usuário sobre a falha
+            alert("Ocorreu um erro ao registrar seu pedido no sistema. Por favor, verifique sua conexão ou tente novamente. Você ainda pode enviar a mensagem no WhatsApp.");
         }
     }
 
@@ -850,7 +868,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // INÍCIO DA ALTERAÇÃO: Lógica do seletor de localidade customizado
     function getLocationOptions() {
         return [
             { value: '0.00', text: 'Assentamento – Entrega grátis' },
@@ -879,7 +896,6 @@ document.addEventListener('DOMContentLoaded', () => {
             optionEl.className = 'location-option';
             optionEl.dataset.value = location.value;
             
-            // Cria spans separados para nome e preço
             const [name, price] = location.text.split('–').map(s => s.trim());
             const nameSpan = document.createElement('span');
             nameSpan.className = 'location-name';
@@ -905,7 +921,6 @@ document.addEventListener('DOMContentLoaded', () => {
             openModal('location-modal');
         });
     }
-    // FIM DA ALTERAÇÃO
 
     function initialize() {
         loadBranding();
@@ -1069,7 +1084,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // ALTERADO: Adicionada a chamada para salvar no Firebase
         document.getElementById('review-modal').addEventListener('click', async (e) => {
              if (e.target.id === 'back-to-address-btn') { closeModal('review-modal'); openModal('address-modal'); }
              if (e.target.id === 'submit-order-btn') {
@@ -1077,14 +1091,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.disabled = true;
                 btn.textContent = 'Enviando...';
                 
-                // 1. Salva no Firebase (função adicional)
                 await saveOrderToFirebase();
 
-                // 2. Gera link e envia para o WhatsApp (função principal)
                 const whatsappUrl = generateWhatsAppMessage();
                 window.open(whatsappUrl, '_blank');
                 
-                // 3. Limpa o carrinho e fecha os modais
                 cart = [];
                 updateCart(); 
                 closeModal('review-modal');

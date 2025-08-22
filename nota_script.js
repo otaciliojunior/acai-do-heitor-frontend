@@ -1,7 +1,7 @@
 // nota_script.js (Versão Final Completa - Conectado ao Backend)
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- ELEMENTOS DA UI E CONFIGURAÇÕES ---
+    // --- ELEMENTOS DA UI E CONFIGURAções ---
     const BACKEND_URL = 'https://acai-do-heitor-backend.onrender.com';
     const views = document.querySelectorAll('.view');
     const navItems = document.querySelectorAll('.nav-item');
@@ -46,11 +46,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`${BACKEND_URL}/orders`);
             if (!response.ok) throw new Error('Falha ao buscar pedidos do servidor.');
             
-            allOrdersCache = await response.json(); // Armazena todos os pedidos para a busca
+            allOrdersCache = await response.json(); 
             
             const newOrders = allOrdersCache.filter(order => order.data.status === 'novo');
             
-            // Lógica de notificação sonora para novos pedidos
             const currentOrderIds = new Set(newOrders.map(o => o.id));
             if (knownOrderIds.size > 0) {
                 let hasNewOrder = false;
@@ -84,7 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Ordena os pedidos pelo mais antigo primeiro
         newOrders.sort((a, b) => a.data.timestamp._seconds - b.data.timestamp._seconds);
 
         newOrders.forEach(order => {
@@ -112,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  cardToRemove.classList.add('removing');
                  setTimeout(() => cardToRemove.remove(), 300);
             }
-            // Atualiza o contador e a lista sem precisar de uma nova busca
+
             const currentCount = parseInt(orderCountBadge.textContent, 10);
             const newCount = currentCount - 1;
             orderCountBadge.textContent = newCount;
@@ -128,8 +126,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- RODA A CADA 10 SEGUNDOS PARA BUSCAR NOVOS PEDIDOS ---
-    fetchAndRenderOrders(); // Carga inicial
-    setInterval(fetchAndRenderOrders, 10000); // 10 segundos
+    fetchAndRenderOrders(); 
+    setInterval(fetchAndRenderOrders, 10000); 
 
     // --- EVENT LISTENERS GERAIS ---
     newOrdersView.addEventListener('click', async (e) => {
@@ -162,8 +160,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const finishedOrders = allOrdersCache.filter(order => order.data.status !== 'novo');
         const results = finishedOrders.filter(order => {
+            const customerName = (order.data.customer && order.data.customer.name) ? order.data.customer.name : (order.data.customerName || '');
             const orderIdMatch = order.data.orderId.includes(searchTerm);
-            const customerNameMatch = order.data.customer.name.toLowerCase().includes(searchTerm);
+            const customerNameMatch = customerName.toLowerCase().includes(searchTerm);
             return orderIdMatch || customerNameMatch;
         });
 
@@ -187,19 +186,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- FUNÇÕES DE CRIAÇÃO DE HTML ---
     function createNewOrderCard(orderId, orderData) {
         const date = new Date(orderData.timestamp._seconds * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        const deliveryIcon = orderData.delivery.mode === 'delivery' ? 'fa-motorcycle' : 'fa-store';
+        const deliveryIcon = orderData.deliveryMode === 'delivery' ? 'fa-motorcycle' : 'fa-store';
+        
+        const totalValue = (orderData.totals && typeof orderData.totals.total !== 'undefined') 
+            ? orderData.totals.total.toFixed(2) 
+            : '0.00';
+
+        const customerName = (orderData.customer && orderData.customer.name) ? orderData.customer.name : (orderData.customerName || 'Cliente não informado');
+
         const card = document.createElement('div');
         card.className = 'order-card';
         card.dataset.id = orderId;
         card.innerHTML = `
             <div class="card-summary">
                 <div class="card-info">
-                    <h3>${orderData.customer.name}</h3>
+                    <h3>${customerName}</h3>
                     <span>#${orderData.orderId} - ${date}</span>
                 </div>
                 <div class="card-status">
-                    <span class="total-badge">R$ ${orderData.totals.total.toFixed(2)}</span>
-                    <span class="delivery-type"><i class="fas ${deliveryIcon}"></i> ${orderData.delivery.mode === 'delivery' ? 'Entrega' : 'Retirada'}</span>
+                    <span class="total-badge">R$ ${totalValue}</span>
+                    <span class="delivery-type"><i class="fas ${deliveryIcon}"></i> ${orderData.deliveryMode === 'delivery' ? 'Entrega' : 'Retirada'}</span>
                 </div>
             </div>
             <div class="card-details">
@@ -216,12 +222,19 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function createSearchResultCard(orderId, orderData) {
         const date = new Date(orderData.timestamp._seconds * 1000).toLocaleDateString('pt-BR');
+        
+        const totalValue = (orderData.totals && typeof orderData.totals.total !== 'undefined') 
+            ? orderData.totals.total.toFixed(2) 
+            : '0.00';
+
+        const customerName = (orderData.customer && orderData.customer.name) ? orderData.customer.name : (orderData.customerName || 'Cliente não informado');
+
         const card = document.createElement('div');
         card.className = 'result-card';
         card.innerHTML = `
-            <h3>${orderData.customer.name}</h3>
+            <h3>${customerName}</h3>
             <p>
-                <strong>Pedido #${orderData.orderId}</strong> | Data: ${date} | Total: R$ ${orderData.totals.total.toFixed(2)}
+                <strong>Pedido #${orderData.orderId}</strong> | Data: ${date} | Total: R$ ${totalValue}
                 <br>
                 Status: <strong>${orderData.status}</strong>
             </p>
