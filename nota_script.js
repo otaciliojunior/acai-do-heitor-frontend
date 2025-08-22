@@ -1,4 +1,4 @@
-// nota_script.js (Com fluxo de conclusão corrigido)
+// nota_script.js (Com fluxo de status inteligente por tipo de pedido)
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- ELEMENTOS DA UI E CONFIGURAções ---
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) throw new Error('Falha ao atualizar o pedido.');
 
-            // Recarrega a lista para refletir a mudança de status ou a remoção do item
+            // Recarrega a lista para refletir a mudança
             await fetchAndRenderOrders();
 
         } catch (error) {
@@ -73,10 +73,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             allOrdersCache = await response.json();
             
-            // ======================= INÍCIO DA CORREÇÃO =======================
-            // A tela principal agora mostra pedidos 'novo', 'preparo' E 'entrega'
-            const activeOrders = allOrdersCache.filter(order => ['novo', 'preparo', 'entrega'].includes(order.data.status));
-            // ======================== FIM DA CORREÇÃO =========================
+            // A tela principal agora mostra todos os pedidos que não estão concluídos
+            const activeOrders = allOrdersCache.filter(order => order.data.status !== 'concluido');
             
             const newOrderIds = new Set(activeOrders.filter(o => o.data.status === 'novo').map(o => o.id));
             if (knownOrderIds.size > 0 && newOrderIds.size > knownOrderIds.size && soundEnabled) {
@@ -104,9 +102,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Ordena os pedidos por status e depois por tempo
         activeOrders.sort((a, b) => {
-            const statusOrder = { 'novo': 1, 'preparo': 2, 'entrega': 3 };
-            if (statusOrder[a.data.status] !== statusOrder[b.data.status]) {
-                return statusOrder[a.data.status] - statusOrder[b.data.status];
+            const statusOrder = { 'novo': 1, 'preparo': 2, 'entrega': 3, 'pronto_retirada': 3 };
+            const statusA = statusOrder[a.data.status] || 99;
+            const statusB = statusOrder[b.data.status] || 99;
+            if (statusA !== statusB) {
+                return statusA - statusB;
             }
             return a.data.timestamp._seconds - b.data.timestamp._seconds;
         });
@@ -175,15 +175,22 @@ document.addEventListener('DOMContentLoaded', () => {
         card.className = `order-card status-${orderData.status}`;
         card.dataset.id = orderId;
 
-        // Lógica de botões para o fluxo completo de status
+        // ======================= INÍCIO DA ALTERAÇÃO =======================
+        // Lógica de botões inteligente baseada no tipo de pedido (deliveryMode)
         let actionButtonHTML = '';
         if (orderData.status === 'novo') {
             const buttonText = `<i class="fas fa-fire-alt"></i> Em Preparo`;
             actionButtonHTML = `<button class="status-btn preparo" data-next-status="preparo" data-original-html='${buttonText}'>${buttonText}</button>`;
         } else if (orderData.status === 'preparo') {
-            const buttonText = `<i class="fas fa-motorcycle"></i> Saiu p/ Entrega`;
-            actionButtonHTML = `<button class="status-btn entrega" data-next-status="entrega" data-original-html='${buttonText}'>${buttonText}</button>`;
-        } else if (orderData.status === 'entrega') {
+            // Se for delivery, mostra "Saiu p/ Entrega". Se for retirada, mostra "Pronto p/ Retirada".
+            if (orderData.deliveryMode === 'delivery') {
+                const buttonText = `<i class="fas fa-motorcycle"></i> Saiu p/ Entrega`;
+                actionButtonHTML = `<button class="status-btn entrega" data-next-status="entrega" data-original-html='${buttonText}'>${buttonText}</button>`;
+            } else { // pickup
+                const buttonText = `<i class="fas fa-store-alt"></i> Pronto p/ Retirada`;
+                actionButtonHTML = `<button class="status-btn retirada" data-next-status="pronto_retirada" data-original-html='${buttonText}'>${buttonText}</button>`;
+            }
+        } else if (orderData.status === 'entrega' || orderData.status === 'pronto_retirada') {
             const buttonText = `<i class="fas fa-check-double"></i> Concluir`;
             actionButtonHTML = `<button class="status-btn concluido" data-next-status="concluido" data-original-html='${buttonText}'>${buttonText}</button>`;
         }
@@ -204,6 +211,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
+        // ======================== FIM DA ALTERAÇÃO =========================
+
         card.querySelector('.card-summary').addEventListener('click', () => card.classList.toggle('expanded'));
         return card;
     }

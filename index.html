@@ -290,11 +290,18 @@
                             <p>Sua delícia está sendo preparada.</p>
                         </div>
                     </div>
-                    <div class="timeline-step" data-status="entrega">
+                    <div class="timeline-step" data-status="entrega" data-mode="delivery-only">
                         <div class="step-icon"><i class="fas fa-motorcycle"></i></div>
                         <div class="step-text">
                             <h4>Saiu para Entrega</h4>
                             <p>Nosso entregador já está a caminho.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-step" data-status="pronto_retirada" data-mode="pickup-only">
+                        <div class="step-icon"><i class="fas fa-store-alt"></i></div>
+                        <div class="step-text">
+                            <h4>Pronto para Retirada</h4>
+                            <p>Seu pedido já pode ser retirado.</p>
                         </div>
                     </div>
                     <div class="timeline-step" data-status="concluido">
@@ -381,5 +388,5 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
     
-    <script src="script.js?v=2.0"></script> </body>
+    <script src="script.js?v=2.1"></script> </body>
 </html>

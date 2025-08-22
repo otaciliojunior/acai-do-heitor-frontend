@@ -34,19 +34,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INÍCIO: NOVAS FUNÇÕES DE ACOMPANHAMENTO DE PEDIDO ---
     // ======================================================================
 
-    function startOrderTracking(orderId, orderNumber) {
+    function startOrderTracking(orderId, orderNumber, deliveryMode) {
         activeOrderId = orderId;
         localStorage.setItem('activeOrderId', orderId);
         localStorage.setItem('activeOrderNumber', orderNumber);
+        localStorage.setItem('activeOrderMode', deliveryMode); // Salva o modo
 
         const trackingOrderIdElement = document.getElementById('tracking-order-id');
         if (trackingOrderIdElement) {
             trackingOrderIdElement.textContent = `Acompanhando Pedido #${orderNumber}`;
         }
+        
+        // Antes de abrir o modal, ajusta a UI
+        setupTrackingUI(deliveryMode);
         openModal('tracking-modal');
         
         if (trackingInterval) clearInterval(trackingInterval);
-        trackingInterval = setInterval(() => checkOrderStatus(orderId), 20000); // Verifica a cada 20 segundos
+        trackingInterval = setInterval(() => checkOrderStatus(orderId), 20000);
         checkOrderStatus(orderId);
     }
 
@@ -63,36 +67,65 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Status do pedido não pôde ser verificado.');
             }
             const data = await response.json();
-            updateTrackingUI(data.status);
+            // Agora recebemos { status, orderId, deliveryMode }
+            updateTrackingUI(data.status, data.deliveryMode);
         } catch (error) {
             console.error("Erro ao verificar status:", error);
             if (trackingInterval) clearInterval(trackingInterval);
         }
     }
+    
+    // Mostra/esconde as etapas corretas ANTES de qualquer atualização
+    function setupTrackingUI(deliveryMode) {
+        const deliveryStep = document.querySelector('.timeline-step[data-mode="delivery-only"]');
+        const pickupStep = document.querySelector('.timeline-step[data-mode="pickup-only"]');
+
+        if (deliveryStep && pickupStep) {
+            if (deliveryMode === 'delivery') {
+                deliveryStep.style.display = 'flex';
+                pickupStep.style.display = 'none';
+            } else { // 'pickup'
+                deliveryStep.style.display = 'none';
+                pickupStep.style.display = 'flex';
+            }
+        }
+    }
 
     // Função que controla a nova UI de Acompanhamento
-    function updateTrackingUI(status) {
+    function updateTrackingUI(status, deliveryMode) {
         const timelineContainer = document.querySelector('.tracking-timeline');
         if (!timelineContainer) return;
-
-        const statuses = ['novo', 'preparo', 'entrega', 'concluido'];
         
-        // Atualiza a classe do container principal para animar a linha de progresso
-        timelineContainer.className = 'tracking-timeline'; // Limpa classes antigas
-        timelineContainer.classList.add(`status-${status}`);
+        // Garante que a UI esteja configurada para o modo correto
+        setupTrackingUI(deliveryMode);
+
+        const statuses = deliveryMode === 'delivery'
+            ? ['novo', 'preparo', 'entrega', 'concluido']
+            : ['novo', 'preparo', 'pronto_retirada', 'concluido'];
+        
+        // Limpa classes antigas e aplica a classe de progresso correta
+        timelineContainer.className = 'tracking-timeline';
+        const progressPercentage = {
+            'novo': '0%',
+            'preparo': '33%',
+            'entrega': '66%',
+            'pronto_retirada': '66%',
+            'concluido': '100%'
+        };
+        timelineContainer.querySelector('.timeline-progress').style.height = progressPercentage[status] || '0%';
 
         let statusIndex = statuses.indexOf(status);
 
         // Percorre cada etapa da timeline
-        statuses.forEach((s, index) => {
-            const stepElement = document.querySelector(`.timeline-step[data-status="${s}"]`);
-            if(stepElement) {
-                stepElement.classList.remove('is-active', 'is-complete');
-                if (index < statusIndex) {
-                    stepElement.classList.add('is-complete');
-                } else if (index === statusIndex) {
-                    stepElement.classList.add('is-active');
-                }
+        document.querySelectorAll('.timeline-step').forEach(step => {
+            const stepStatus = step.dataset.status;
+            const stepIndex = statuses.indexOf(stepStatus);
+
+            step.classList.remove('is-active', 'is-complete');
+            if (stepIndex < statusIndex) {
+                step.classList.add('is-complete');
+            } else if (stepIndex === statusIndex) {
+                step.classList.add('is-active');
             }
         });
 
@@ -107,20 +140,18 @@ document.addEventListener('DOMContentLoaded', () => {
         activeOrderId = null;
         localStorage.removeItem('activeOrderId');
         localStorage.removeItem('activeOrderNumber');
+        localStorage.removeItem('activeOrderMode');
     }
     
     function checkForActiveOrder() {
         const savedOrderId = localStorage.getItem('activeOrderId');
         const savedOrderNumber = localStorage.getItem('activeOrderNumber');
-        if (savedOrderId && savedOrderNumber) {
-            startOrderTracking(savedOrderId, savedOrderNumber);
+        const savedOrderMode = localStorage.getItem('activeOrderMode');
+        if (savedOrderId && savedOrderNumber && savedOrderMode) {
+            startOrderTracking(savedOrderId, savedOrderNumber, savedOrderMode);
         }
     }
-
-    // ======================================================================
-    // --- FIM: NOVAS FUNÇÕES DE ACOMPANHAMENTO DE PEDIDO ---
-    // ======================================================================
-
+    
     // --- FUNÇÕES DE GERENCIAMENTO DE ESTADO ---
     function saveOrderState() { try { const addressForm=document.getElementById('address-form'); const formData=new FormData(addressForm); const addressData=Object.fromEntries(formData.entries()); const orderState={cart:cart,address:addressData}; const stateWithTimestamp={data:orderState,timestamp:new Date().getTime()}; localStorage.setItem('orderState',JSON.stringify(stateWithTimestamp)); } catch (error) { console.error("Erro ao salvar o estado do pedido:", error); } }
     function loadOrderState() { const savedStateJSON=localStorage.getItem('orderState'); if (!savedStateJSON) return; try { const savedStateWithTimestamp=JSON.parse(savedStateJSON); const now=new Date().getTime(); const expirationTime=ORDER_EXPIRATION_MINUTES*60*1000; if (now - savedStateWithTimestamp.timestamp < expirationTime) { const savedData=savedStateWithTimestamp.data; cart=savedData.cart || []; updateCart(); if (savedData.address) { const address=savedData.address; const form=document.getElementById('address-form'); for (const key in address) { const input=form.elements[key]; if (input) { if (input.type==='radio') { if (input.value===address[key]) { input.checked=true; input.dispatchEvent(new Event('change', { bubbles: true })); } } else { input.value=address[key]; } } } } } else { localStorage.removeItem('orderState'); } } catch (error) { console.error("Erro ao carregar o estado do pedido:", error); localStorage.removeItem('orderState'); } }
@@ -270,7 +301,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.removeItem('orderState');
                     updateCart(); 
                     closeModal('review-modal');
-                    startOrderTracking(newOrder.id, newOrder.data.orderId);
+                    // Inicia o acompanhamento passando o deliveryMode
+                    startOrderTracking(newOrder.id, newOrder.data.orderId, newOrder.data.deliveryMode);
                 } else {
                     closeModal('review-modal');
                     openModal('submit-modal');
@@ -290,11 +322,8 @@ document.addEventListener('DOMContentLoaded', () => {
         handleDeliveryTypeChange();
         checkForActiveOrder();
 
-        // ERRO ESTAVA AQUI: A linha abaixo tentava encontrar um elemento que não existia.
-        // document.getElementById('close-tracking-modal').addEventListener('click', () => closeModal('tracking-modal'));
-        
-        // Correção: Apenas um listener para o botão que de fato existe.
         document.getElementById('close-tracking-modal-btn').addEventListener('click', () => closeModal('tracking-modal'));
+        document.getElementById('close-custom-modal-btn').addEventListener('click', () => closeModal('customization-modal'));
         document.getElementById('submit-modal').addEventListener('click', (e) => { if (e.target.matches('.close-btn')) { closeModal('submit-modal'); }});
     }
 
