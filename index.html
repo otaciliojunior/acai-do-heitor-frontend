@@ -67,16 +67,14 @@
                 <p class="section-subtitle animate-on-scroll">CARDÁPIO</p>
                 <h2 class="animate-on-scroll">Conheça o nosso cardápio</h2>
                 <div class="category-filters animate-on-scroll">
-                    <div class="category-filters animate-on-scroll">
-            <button class="filter-btn active" data-category="all"><i class="fas fa-utensils"></i> Todos</button>
-            <button class="filter-btn" data-category="acai"><i class="fas fa-ice-cream"></i> Açaí</button>
-            <button class="filter-btn" data-category="sanduiches"><i class="fas fa-hamburger"></i> Sanduíches</button>
-            <button class="filter-btn" data-category="cachorros_quentes"><i class="fas fa-hotdog"></i> Cachorros-quentes</button>
-            <button class="filter-btn" data-category="pasteis"><i class="fas fa-stroopwafel"></i> Pastéis</button>
-            <button class="filter-btn" data-category="petiscos"><i class="fas fa-drumstick-bite"></i> Petiscos</button>
-            <button class="filter-btn" data-category="batata_frita"><i class="fas fa-french-fries"></i> Batata Frita</button>
-            <button class="filter-btn" data-category="bebidas"><i class="fas fa-cocktail"></i> Bebidas</button>
-            </div>
+                    <button class="filter-btn active" data-category="all"><i class="fas fa-utensils"></i> Todos</button>
+                    <button class="filter-btn" data-category="acai"><i class="fas fa-ice-cream"></i> Açaí</button>
+                    <button class="filter-btn" data-category="sanduiches"><i class="fas fa-hamburger"></i> Sanduíches</button>
+                    <button class="filter-btn" data-category="cachorros_quentes"><i class="fas fa-hotdog"></i> Cachorros-quentes</button>
+                    <button class="filter-btn" data-category="pasteis"><i class="fas fa-stroopwafel"></i> Pastéis</button>
+                    <button class="filter-btn" data-category="petiscos"><i class="fas fa-drumstick-bite"></i> Petiscos</button>
+                    <button class="filter-btn" data-category="batata_frita"><i class="fas fa-french-fries"></i> Batata Frita</button>
+                    <button class="filter-btn" data-category="bebidas"><i class="fas fa-cocktail"></i> Bebidas</button>
                 </div>
                 
                 <div class="product-list">
@@ -95,7 +93,6 @@
             <div class="footer-content">
                 <img src="img/logo.png" alt="Logo Açaí do Heitor" class="footer-logo">
                 <p class="footer-slogan">A energia que te move, agora mais perto de você.</p>
-                
                 <h3>NAVEGUE</h3>
                 <ul class="footer-nav">
                     <li><a href="#menu">Fazer Pedido</a></li>
@@ -103,7 +100,6 @@
                     <li><a href="#">Sobre Nós</a></li>
                     <li><a href="#">Contato</a></li>
                 </ul>
-                
                 <h3>SIGA-NOS</h3>
                 <div class="social-icons">
                     <a href="#" class="social-icon instagram"><i class="fab fa-instagram"></i></a>
@@ -157,7 +153,6 @@
                             </div>
                         </div>
                     </div>
-                    
                     <div class="form-group">
                         <label for="customer-name">Seu Nome Completo:</label>
                         <input type="text" id="customer-name" placeholder="Digite seu nome" required>
@@ -166,13 +161,12 @@
                         <label for="customer-phone">Seu WhatsApp:</label>
                         <input type="tel" id="customer-phone" placeholder="DDD + Número (só dígitos)" required>
                     </div>
-
                     <div id="address-fields">
                         <div class="form-group">
                             <label for="customer-location">Local de residência:</label>
                             <input type="hidden" id="customer-location" required>
                             <div id="custom-select-trigger" class="custom-select-display" tabindex="0">
-                                <span id="selected-location-text">Selecione seu local</span>
+                                <span id="selected-location-text" class="placeholder">Selecione seu local</span>
                                 <i class="fas fa-chevron-down"></i>
                             </div>
                         </div>
@@ -185,34 +179,23 @@
                             <input type="text" id="house-number" placeholder="Ex: 123" required>
                         </div>
                     </div>
-                    
                     <div class="form-group">
                         <label>Forma de Pagamento:</label>
                         <div class="payment-options">
                             <div class="payment-option-wrapper">
                                 <input type="radio" id="pix" name="payment" value="Pix" checked>
-                                <label for="pix" class="payment-option">
-                                    <i class="fas fa-qrcode"></i>
-                                    <span>Pix</span>
-                                </label>
+                                <label for="pix" class="payment-option"><i class="fas fa-qrcode"></i><span>Pix</span></label>
                             </div>
                             <div class="payment-option-wrapper">
                                 <input type="radio" id="dinheiro" name="payment" value="Dinheiro">
-                                <label for="dinheiro" class="payment-option">
-                                    <i class="fas fa-money-bill-wave"></i>
-                                    <span>Dinheiro</span>
-                                </label>
+                                <label for="dinheiro" class="payment-option"><i class="fas fa-money-bill-wave"></i><span>Dinheiro</span></label>
                             </div>
                             <div class="payment-option-wrapper">
                                 <input type="radio" id="cartao" name="payment" value="Cartão">
-                                <label for="cartao" class="payment-option">
-                                    <i class="fas fa-credit-card"></i>
-                                    <span>Cartão</span>
-                                </label>
+                                <label for="cartao" class="payment-option"><i class="fas fa-credit-card"></i><span>Cartão</span></label>
                             </div>
                         </div>
                     </div>
-                    
                     <div id="change-section" style="display: none;">
                         <div class="form-group">
                             <label>Precisa de troco?</label>
@@ -232,7 +215,6 @@
                             <input type="number" id="change-amount" placeholder="50">
                         </div>
                     </div>
-
                 </form>
             </div>
             <div class="modal-footer">
@@ -241,6 +223,7 @@
             </div>
         </div>
     </div>
+
     <div id="review-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -250,11 +233,9 @@
             <div class="modal-body">
                 <div id="review-summary">
                     <h4>Itens do Pedido:</h4>
-                    <div id="review-items"></div>
-                    <hr>
+                    <div id="review-items"></div><hr>
                     <h4 id="review-address-label">Endereço de Entrega:</h4>
-                    <p id="review-address-details"></p>
-                    <hr>
+                    <p id="review-address-details"></p><hr>
                     <h4>Forma de Pagamento:</h4>
                     <p id="review-payment-method"></p>
                 </div>
@@ -266,33 +247,70 @@
             </div>
         </div>
     </div>
-
-    <div id="submit-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <h2>Obrigado pelo seu pedido!</h2>
-            <p>Para confirmar, basta enviar a mensagem que preparamos para você no WhatsApp.</p>
     
+    <div id="submit-modal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <span class="close-btn">&times;</span>
+            <div style="font-size: 3rem; color: var(--success-color); margin-bottom: 15px;"><i class="fas fa-check-circle"></i></div>
+            <h2>Obrigado!</h2>
+            <p>Seu pedido foi recebido e já estamos preparando tudo.</p>
             <div id="feedback-section">
-                <hr>
-                <h4>O que você achou da experiência de compra?</h4>
-                <div class="star-rating">
-                    <i class="fas fa-star" data-value="1"></i>
-                    <i class="fas fa-star" data-value="2"></i>
-                    <i class="fas fa-star" data-value="3"></i>
-                    <i class="fas fa-star" data-value="4"></i>
-                    <i class="fas fa-star" data-value="5"></i>
-                </div>
-                <textarea id="feedback-comment" placeholder="Deixe um comentário (opcional)"></textarea>
-                <button id="submit-feedback-btn" class="btn-primary">Enviar Avaliação</button>
+                 <p style="margin-top: 20px; font-weight: 500;">Avalie sua experiência:</p>
+                 <div class="star-rating">
+                    <i class="fas fa-star" data-value="1"></i><i class="fas fa-star" data-value="2"></i><i class="fas fa-star" data-value="3"></i><i class="fas fa-star" data-value="4"></i><i class="fas fa-star" data-value="5"></i>
+                 </div>
+                 <textarea id="feedback-comment" placeholder="Deixe um comentário (opcional)"></textarea>
+                 <button id="submit-feedback-btn" class="btn-primary">Enviar Avaliação</button>
             </div>
             <div id="feedback-thanks" style="display: none;">
-                <p><strong>Obrigado pelo seu feedback!</strong></p>
+                <p>Sua avaliação foi enviada. Agradecemos!</p>
             </div>
-    
         </div>
     </div>
 
+    <div id="tracking-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="tracking-order-id">Acompanhando Pedido #000000</h2>
+            </div>
+            <div class="modal-body">
+                <div class="tracking-timeline">
+                    <div class="timeline-progress"></div>
+                    <div class="timeline-step" data-status="novo">
+                        <div class="step-icon"><i class="fas fa-receipt"></i></div>
+                        <div class="step-text">
+                            <h4>Pedido Recebido</h4>
+                            <p>Recebemos o seu pedido.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-step" data-status="preparo">
+                        <div class="step-icon"><i class="fas fa-fire-alt"></i></div>
+                        <div class="step-text">
+                            <h4>Em Preparação</h4>
+                            <p>Sua delícia está sendo preparada.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-step" data-status="entrega">
+                        <div class="step-icon"><i class="fas fa-motorcycle"></i></div>
+                        <div class="step-text">
+                            <h4>Saiu para Entrega</h4>
+                            <p>Nosso entregador já está a caminho.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-step" data-status="concluido">
+                        <div class="step-icon"><i class="fas fa-check-double"></i></div>
+                        <div class="step-text">
+                            <h4>Pedido Concluído</h4>
+                            <p>Bom apetite!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+                <button class="btn-secondary" id="close-tracking-modal-btn">Fechar</button>
+            </div>
+        </div>
+    </div>
     <div id="customization-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -309,29 +327,26 @@
                             <h4>Açaí e Cremes</h4>
                             <span class="badge" id="cremes-badge">Escolha até 5 - Obrigatório</span>
                         </div>
-                        <div class="customization-options" id="custom-cremes">
-                        </div>
+                        <div class="customization-options" id="custom-cremes"></div>
                     </div>
                     <div class="customization-group">
                         <div class="customization-group-header">
                             <h4>Acompanhamentos</h4>
                             <span class="badge" id="acompanhamentos-badge">Escolha até 10</span>
                         </div>
-                        <div class="customization-options" id="custom-acompanhamentos">
-                        </div>
+                        <div class="customization-options" id="custom-acompanhamentos"></div>
                     </div>
                     <div class="customization-group">
                         <div class="customization-group-header">
                             <h4>Adicionais</h4>
                             <span class="badge">Itens com custo extra</span>
                         </div>
-                        <div class="customization-options" id="custom-adicionais">
-                        </div>
+                        <div class="customization-options" id="custom-adicionais"></div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <div class="quantity-controls"><button class="quantity-btn" id="decrease-custom-quantity">-</button><span id="custom-quantity">1</span><button class="quantity-btn" id="increase-custom-quantity">+</button></div>
+                <div class="quantity-controls"><button class="quantity-btn" data-action="decrease">-</button><span id="custom-quantity">1</span><button class="quantity-btn" data-action="increase">+</button></div>
                 <button id="add-custom-to-cart-btn" class="btn-primary">Adicionar ao carrinho</button>
             </div>
         </div>
@@ -343,8 +358,7 @@
                 <h2>Horário de Funcionamento</h2>
                 <button class="close-btn">&times;</button>
             </div>
-            <div class="modal-body" id="hours-details-content">
-                </div>
+            <div class="modal-body" id="hours-details-content"></div>
         </div>
     </div>
 
@@ -354,10 +368,10 @@
                 <h2>Selecione seu local</h2>
                 <button class="close-btn">&times;</button>
             </div>
-            <div class="modal-body" id="location-options-list">
-                </div>
+            <div class="modal-body" id="location-options-list"></div>
         </div>
     </div>
+
     <div id="toast-notification">Item adicionado ao carrinho</div>
     <div id="floating-cart-btn">
         <span id="floating-cart-count">0</span>
@@ -367,6 +381,5 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
     
-    <script src="script.js"></script>
-</body>
+    <script src="script.js?v=2.0"></script> </body>
 </html>

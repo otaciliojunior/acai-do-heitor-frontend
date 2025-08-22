@@ -489,6 +489,7 @@ footer h3 {
     color: var(--text-color-dark);
     margin: 5px 0 0 0;
 }
+/* --- Novos estilos para os itens do carrinho --- */
 .empty-cart-message {
     padding: 40px 0;
     text-align: center;
@@ -607,13 +608,15 @@ footer h3 {
     color: var(--primary-color);
     font-weight: 600;
 }
+
+/* --- Novos estilos para as opções de pagamento --- */
 .payment-options {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 15px;
 }
 .payment-option-wrapper input[type="radio"] {
-    display: none;
+    display: none; /* Esconde o botão de rádio padrão */
 }
 .payment-option {
     display: flex;
@@ -665,7 +668,17 @@ footer h3 {
 }
 #submit-modal .modal-content {
     text-align: center;
-    padding: 40px 20px 20px 20px;
+    padding: 40px 20px 20px 20px; /* Ajuste no padding para o botão 'x' */
+}
+.whatsapp-btn {
+    width: 100%;
+    text-align: center;
+    display: inline-block;
+    text-decoration: none;
+    margin-bottom: 15px;
+}
+.whatsapp-btn i {
+    margin-right: 8px;
 }
 
 /* --- 8. MODAL DE PERSONALIZAÇÃO --- */
@@ -803,15 +816,48 @@ footer h3 {
     visibility: visible;
     transform: translateY(0);
 }
+#toast-notification.info {
+    background-color: #17a2b8;
+}
+#toast-notification.error {
+    background-color: var(--danger-color);
+}
+
 
 /* --- 10. AJUSTES PARA MOBILE --- */
+@media (max-width: 768px) {
+    .footer-content {
+       max-width: 100%;
+    }
+}
 @media (max-width: 480px) {
     .hero-content h1 {
-        font-size: 2.8rem;
+        font-size: 2.8rem; /* Ajuste para telas menores */
+    }
+    .product-item {
+        padding: 10px;
+    }
+    .product-info {
+        gap: 10px;
+    }
+    .product-info img {
+        width: 55px;
+        height: 55px;
+    }
+    .product-details h3 {
+        font-size: 1rem;
     }
     .add-btn {
         padding: 10px 15px;
         font-size: 0.9rem;
+    }
+    .cart-item {
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+    }
+    .cart-item-actions {
+        grid-column: 2 / 3;
+        justify-self: end;
     }
     .modal-footer {
         flex-direction: column;
@@ -824,7 +870,7 @@ footer h3 {
     }
 }
 
-/* --- 11. ANIMAÇÕES E UTILITÁRIOS --- */
+/* --- 11. ESTILOS DE ANIMAÇÃO E UTILITÁRIOS (ATUALIZADO) --- */
 .product-item.hidden {
     display: none;
 }
@@ -836,6 +882,10 @@ footer h3 {
 .animate-on-scroll.is-visible {
     opacity: 1;
     transform: translateY(0) scale(1);
+}
+.hero-text {
+    /* Garante que as mudanças de opacidade e transform do JS serão suaves */
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
 }
 #show-more-btn {
     background-color: transparent;
@@ -856,134 +906,103 @@ footer h3 {
     margin-right: 8px;
 }
 
-/* --- ESTILOS DA PESQUISA DE SATISFAÇÃO E CAMPO DE SELEÇÃO (DO ARQUIVO ANTIGO) --- */
-#feedback-section { margin-top: 25px; padding-top: 15px; border-top: 1px solid #eee; text-align: center; }
-.star-rating { font-size: 2rem; color: #ccc; cursor: pointer; margin-bottom: 15px; }
-.star-rating .fas.hover, .star-rating .fas.selected { color: #ffc107; }
-#feedback-comment { width: 100%; min-height: 80px; padding: 10px; border-radius: 10px; border: 1px solid var(--border-color); font-family: inherit; font-size: 0.9rem; margin-bottom: 10px; resize: vertical; }
-#submit-feedback-btn { width: 100%; }
-#submit-feedback-btn:disabled { background-color: #ccc; cursor: not-allowed; }
-#feedback-thanks { margin-top: 20px; text-align: center; }
-.custom-select-display { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); font-family: 'Poppins', sans-serif; font-size: 1rem; cursor: pointer; background-color: white; }
-.custom-select-display:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(93, 61, 141, 0.2); }
-.custom-select-display .placeholder { color: #888; }
-.custom-select-display i { transition: transform 0.3s ease; }
-.custom-select-display.open i { transform: rotate(180deg); }
-#location-options-list { padding: 0; }
-.location-option { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; cursor: pointer; border-bottom: 1px solid var(--border-color); transition: background-color 0.2s ease; }
-.location-option:last-child { border-bottom: none; }
-.location-option:hover { background-color: #f9f6fd; }
-.location-name { font-weight: 500; }
-.location-price { font-weight: 600; color: var(--primary-color); }
-
-/* ====================================================================== */
-/* --- INÍCIO: NOVOS ESTILOS PARA O ACOMPANHAMENTO DE PEDIDO (iFood) --- */
-/* ====================================================================== */
-
-/* Oculta o modal de acompanhamento antigo, se ainda existir */
-#tracking-status-container {
-    display: none;
+/* --- Estilos da Pesquisa de Satisfação --- */
+#feedback-section {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    text-align: center;
 }
 
-/* A nova linha do tempo vertical */
-.tracking-timeline {
-    position: relative;
-    padding: 20px 0 20px 40px; /* Espaço à esquerda para a linha */
+.star-rating {
+    font-size: 2rem;
+    color: #ccc;
+    cursor: pointer;
+    margin-bottom: 15px;
 }
 
-/* A linha cinza de fundo que representa o caminho completo */
-.tracking-timeline::before {
-    content: '';
-    position: absolute;
-    left: 18px;
-    top: 20px;
-    bottom: 20px;
-    width: 4px;
-    background-color: var(--border-color);
-    border-radius: 2px;
+.star-rating .fas.hover,
+.star-rating .fas.selected {
+    color: #ffc107; /* Amarelo da estrela */
 }
 
-/* A linha roxa que preenche o caminho (será animada com JS/CSS) */
-.timeline-progress {
-    position: absolute;
-    left: 18px;
-    top: 20px;
-    width: 4px;
-    background-color: var(--primary-color);
-    border-radius: 2px;
-    height: 0; /* Começa com altura 0 */
-    transition: height 0.6s cubic-bezier(0.65, 0, 0.35, 1); /* Animação suave */
-}
-
-/* Classes de status para controlar a altura da linha de progresso */
-.tracking-timeline.status-novo .timeline-progress { height: 0%; }
-.tracking-timeline.status-preparo .timeline-progress { height: 33%; }
-.tracking-timeline.status-entrega .timeline-progress { height: 66%; }
-.tracking-timeline.status-concluido .timeline-progress { height: 100%; }
-
-.timeline-step {
-    position: relative;
-    display: flex;
-    align-items: center;
-    margin-bottom: 50px; /* Espaço entre os passos */
-    opacity: 0.5;
-    transition: opacity 0.4s ease;
-}
-.timeline-step:last-child {
-    margin-bottom: 0;
-}
-
-/* Estilo do passo atual e dos concluídos */
-.timeline-step.is-active,
-.timeline-step.is-complete {
-    opacity: 1;
-}
-
-.step-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: var(--card-background);
-    border: 4px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    color: var(--text-color-dark);
-    transition: all 0.4s ease;
-    z-index: 1; /* Para ficar acima da linha */
-    margin-right: 20px;
-}
-
-.timeline-step.is-complete .step-icon {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-    color: white;
-}
-/* Animação de pulso para o passo ATIVO */
-.timeline-step.is-active .step-icon {
-    border-color: var(--primary-color);
-    animation: pulse 1.5s infinite;
-}
-
-.step-text h4 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin: 0 0 4px 0;
-}
-.step-text p {
+#feedback-comment {
+    width: 100%;
+    min-height: 80px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    font-family: inherit;
     font-size: 0.9rem;
-    color: #666;
-    margin: 0;
+    margin-bottom: 10px;
+    resize: vertical;
 }
 
-/* Animação de pulso para o ícone ativo */
-@keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(78, 0, 141, 0.4); }
-    70% { box-shadow: 0 0 0 10px rgba(78, 0, 141, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(78, 0, 141, 0); }
+#submit-feedback-btn {
+    width: 100%;
 }
 
-/* ====================================================================== */
-/* --- FIM: NOVOS ESTILOS PARA O ACOMPANHAMENTO DE PEDIDO --- */
-/* ====================================================================== */
+#submit-feedback-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+#feedback-thanks {
+    margin-top: 20px;
+    text-align: center;
+}
+
+/* --- CAMPO DE SELEÇÃO CUSTOMIZADO --- */
+.custom-select-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+    cursor: pointer;
+    background-color: white;
+}
+.custom-select-display:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(93, 61, 141, 0.2);
+}
+.custom-select-display .placeholder {
+    color: #888;
+}
+.custom-select-display i {
+    transition: transform 0.3s ease;
+}
+.custom-select-display.open i {
+    transform: rotate(180deg);
+}
+
+#location-options-list {
+    padding: 0;
+}
+.location-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s ease;
+}
+.location-option:last-child {
+    border-bottom: none;
+}
+.location-option:hover {
+    background-color: #f9f6fd;
+}
+.location-name {
+    font-weight: 500;
+}
+.location-price {
+    font-weight: 600;
+    color: var(--primary-color);
+}

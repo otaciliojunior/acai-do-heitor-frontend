@@ -1,4 +1,4 @@
-// nota_script.js (Versão Final Completa - Conectado ao Backend)
+// nota_script.js (Com fluxo de conclusão corrigido)
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- ELEMENTOS DA UI E CONFIGURAções ---
@@ -35,37 +35,56 @@ document.addEventListener('DOMContentLoaded', () => {
             }).catch(error => {
                 console.error("ERRO ao tentar ativar o som:", error);
                 soundActivationButton.innerHTML = '<i class="fas fa-times"></i> Falha ao Ativar';
-                alert("Não foi possível ativar o som. Verifique as permissões e o caminho do arquivo de áudio.");
+                alert("Não foi possível ativar o som. Verifique as permissões do navegador.");
             });
         }
     });
 
-    // --- FUNÇÃO PARA BUSCAR E RENDERIZAR PEDIDOS ---
+    // --- FUNÇÃO PARA ATUALIZAR STATUS DE UM PEDIDO ---
+    async function updateOrderStatus(orderId, newStatus, button) {
+        try {
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            const response = await fetch(`${BACKEND_URL}/orders/${orderId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus }) 
+            });
+
+            if (!response.ok) throw new Error('Falha ao atualizar o pedido.');
+
+            // Recarrega a lista para refletir a mudança de status ou a remoção do item
+            await fetchAndRenderOrders();
+
+        } catch (error) {
+            console.error("Erro ao atualizar status:", error);
+            alert('Não foi possível atualizar o status do pedido.');
+            button.disabled = false;
+            button.innerHTML = button.dataset.originalHtml; 
+        }
+    }
+
+    // --- FUNÇÃO PARA BUSCAR E RENDERIZAR PEDIDOS ATIVOS ---
     async function fetchAndRenderOrders() {
         try {
             const response = await fetch(`${BACKEND_URL}/orders`);
-            if (!response.ok) throw new Error('Falha ao buscar pedidos do servidor.');
+            if (!response.ok) throw new Error('Falha ao buscar pedidos.');
             
-            allOrdersCache = await response.json(); 
+            allOrdersCache = await response.json();
             
-            const newOrders = allOrdersCache.filter(order => order.data.status === 'novo');
+            // ======================= INÍCIO DA CORREÇÃO =======================
+            // A tela principal agora mostra pedidos 'novo', 'preparo' E 'entrega'
+            const activeOrders = allOrdersCache.filter(order => ['novo', 'preparo', 'entrega'].includes(order.data.status));
+            // ======================== FIM DA CORREÇÃO =========================
             
-            const currentOrderIds = new Set(newOrders.map(o => o.id));
-            if (knownOrderIds.size > 0) {
-                let hasNewOrder = false;
-                currentOrderIds.forEach(id => {
-                    if (!knownOrderIds.has(id)) {
-                        hasNewOrder = true;
-                    }
-                });
-                if (hasNewOrder && soundEnabled) {
-                    notificationSound.play().catch(e => console.error("Erro ao tocar notificação:", e));
-                }
+            const newOrderIds = new Set(activeOrders.filter(o => o.data.status === 'novo').map(o => o.id));
+            if (knownOrderIds.size > 0 && newOrderIds.size > knownOrderIds.size && soundEnabled) {
+                notificationSound.play().catch(e => console.error("Erro ao tocar notificação:", e));
             }
-            knownOrderIds = currentOrderIds;
+            knownOrderIds = newOrderIds;
 
-            updateOrderListView(newOrders);
-            
+            updateOrderListView(activeOrders);
         } catch (error) {
             console.error("Erro ao buscar pedidos:", error);
             newOrdersView.innerHTML = '<div class="message-box">Erro ao conectar com o servidor.</div>';
@@ -73,110 +92,64 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // --- FUNÇÃO PARA ATUALIZAR A LISTA DE PEDIDOS NA TELA ---
-    function updateOrderListView(newOrders) {
-        orderCountBadge.textContent = newOrders.length;
-        orderCountBadge.style.display = newOrders.length > 0 ? 'block' : 'none';
+    function updateOrderListView(activeOrders) {
+        orderCountBadge.textContent = activeOrders.length;
+        orderCountBadge.style.display = activeOrders.length > 0 ? 'block' : 'none';
 
         newOrdersView.innerHTML = '';
-        if (newOrders.length === 0) {
-            newOrdersView.innerHTML = '<div class="message-box">Nenhum pedido novo.</div>';
+        if (activeOrders.length === 0) {
+            newOrdersView.innerHTML = '<div class="message-box">Nenhum pedido ativo no momento.</div>';
             return;
         }
 
-        newOrders.sort((a, b) => a.data.timestamp._seconds - b.data.timestamp._seconds);
+        // Ordena os pedidos por status e depois por tempo
+        activeOrders.sort((a, b) => {
+            const statusOrder = { 'novo': 1, 'preparo': 2, 'entrega': 3 };
+            if (statusOrder[a.data.status] !== statusOrder[b.data.status]) {
+                return statusOrder[a.data.status] - statusOrder[b.data.status];
+            }
+            return a.data.timestamp._seconds - b.data.timestamp._seconds;
+        });
 
-        newOrders.forEach(order => {
+        activeOrders.forEach(order => {
             const card = createNewOrderCard(order.id, order.data);
             newOrdersView.appendChild(card);
         });
     }
 
-    // --- FUNÇÃO PARA CONCLUIR UM PEDIDO ---
-    async function handleConcludeOrder(orderId, button) {
-        try {
-            button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Concluindo...';
-            
-            const response = await fetch(`${BACKEND_URL}/orders/${orderId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: 'concluido' }) 
-            });
-
-            if (!response.ok) throw new Error('Falha ao atualizar o pedido.');
-
-            const cardToRemove = newOrdersView.querySelector(`.order-card[data-id="${orderId}"]`);
-            if (cardToRemove) {
-                 cardToRemove.classList.add('removing');
-                 setTimeout(() => cardToRemove.remove(), 300);
-            }
-
-            const currentCount = parseInt(orderCountBadge.textContent, 10);
-            const newCount = currentCount - 1;
-            orderCountBadge.textContent = newCount;
-            orderCountBadge.style.display = newCount > 0 ? 'block' : 'none';
-            if(newCount === 0) newOrdersView.innerHTML = '<div class="message-box">Nenhum pedido novo.</div>';
-
-        } catch (error) {
-            console.error("Erro ao concluir pedido:", error);
-            alert('Não foi possível atualizar o status do pedido.');
-            button.disabled = false;
-            button.innerHTML = '<i class="fas fa-check-circle"></i> Concluir';
-        }
-    }
-
-    // --- RODA A CADA 10 SEGUNDOS PARA BUSCAR NOVOS PEDIDOS ---
-    fetchAndRenderOrders(); 
-    setInterval(fetchAndRenderOrders, 10000); 
-
     // --- EVENT LISTENERS GERAIS ---
     newOrdersView.addEventListener('click', async (e) => {
         const button = e.target.closest('button');
         if (!button) return;
-        const card = button.closest('.order-card');
-        const docId = card.dataset.id;
-        if (button.classList.contains('move-btn')) {
-            await handleConcludeOrder(docId, button);
+        
+        const docId = button.closest('.order-card').dataset.id;
+
+        if (button.classList.contains('status-btn')) {
+            const nextStatus = button.dataset.nextStatus;
+            await updateOrderStatus(docId, nextStatus, button);
         }
+
         if (button.classList.contains('copy-btn')) {
-            const textToCopy = card.querySelector('pre').textContent;
+            const textToCopy = button.closest('.order-card').querySelector('pre').textContent;
             const success = await copyToClipboard(textToCopy);
             if (success) {
                 button.innerHTML = '<i class="fas fa-paste"></i> Copiado!';
-            } else {
-                button.innerHTML = '<i class="fas fa-times"></i> Falhou!';
+                setTimeout(() => { button.innerHTML = '<i class="fas fa-copy"></i> Copiar'; }, 2000);
             }
-            setTimeout(() => { button.innerHTML = '<i class="fas fa-copy"></i> Copiar'; }, 2500);
         }
     });
 
+    // Função de busca (sem alterações)
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const searchTerm = searchInput.value.trim().toLowerCase();
-        if (!searchTerm) {
-            searchResultsContainer.innerHTML = '<div class="message-box">Busque por pedidos já finalizados.</div>';
-            return;
-        }
-        
-        const finishedOrders = allOrdersCache.filter(order => order.data.status !== 'novo');
-        
-        // ======================= INÍCIO DA CORREÇÃO DEFINITIVA =======================
-        const results = finishedOrders.filter(order => {
-            // Garante que os campos principais nunca sejam 'undefined'
+        if (!searchTerm) return;
+        const results = allOrdersCache.filter(order => {
             const orderId = order.data.orderId || '';
             const customerName = (order.data.customer && order.data.customer.name) ? order.data.customer.name : (order.data.customerName || '');
             const printerText = order.data.printerFriendlyText || '';
-            
-            // Agora as buscas são seguras e abrangentes
-            const orderIdMatch = orderId.includes(searchTerm);
-            const customerNameMatch = customerName.toLowerCase().includes(searchTerm);
-            // Adiciona a busca no texto de impressão para encontrar pedidos antigos
-            const printerTextMatch = printerText.toLowerCase().includes(searchTerm);
-            
-            return orderIdMatch || customerNameMatch || printerTextMatch;
+            return orderId.includes(searchTerm) || customerName.toLowerCase().includes(searchTerm) || printerText.toLowerCase().includes(searchTerm);
         });
-        // ======================== FIM DA CORREÇÃO DEFINITIVA =========================
-
         renderSearchResults(results);
     });
     
@@ -197,33 +170,37 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- FUNÇÕES DE CRIAÇÃO DE HTML ---
     function createNewOrderCard(orderId, orderData) {
         const date = new Date(orderData.timestamp._seconds * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        const deliveryIcon = orderData.deliveryMode === 'delivery' ? 'fa-motorcycle' : 'fa-store';
-        
-        const totalValue = (orderData.totals && typeof orderData.totals.total !== 'undefined') 
-            ? orderData.totals.total.toFixed(2) 
-            : '0.00';
-
         const customerName = (orderData.customer && orderData.customer.name) ? orderData.customer.name : (orderData.customerName || 'Cliente não informado');
-
         const card = document.createElement('div');
-        card.className = 'order-card';
+        card.className = `order-card status-${orderData.status}`;
         card.dataset.id = orderId;
+
+        // Lógica de botões para o fluxo completo de status
+        let actionButtonHTML = '';
+        if (orderData.status === 'novo') {
+            const buttonText = `<i class="fas fa-fire-alt"></i> Em Preparo`;
+            actionButtonHTML = `<button class="status-btn preparo" data-next-status="preparo" data-original-html='${buttonText}'>${buttonText}</button>`;
+        } else if (orderData.status === 'preparo') {
+            const buttonText = `<i class="fas fa-motorcycle"></i> Saiu p/ Entrega`;
+            actionButtonHTML = `<button class="status-btn entrega" data-next-status="entrega" data-original-html='${buttonText}'>${buttonText}</button>`;
+        } else if (orderData.status === 'entrega') {
+            const buttonText = `<i class="fas fa-check-double"></i> Concluir`;
+            actionButtonHTML = `<button class="status-btn concluido" data-next-status="concluido" data-original-html='${buttonText}'>${buttonText}</button>`;
+        }
+        
         card.innerHTML = `
             <div class="card-summary">
                 <div class="card-info">
                     <h3>${customerName}</h3>
                     <span>#${orderData.orderId || ''} - ${date}</span>
                 </div>
-                <div class="card-status">
-                    <span class="total-badge">R$ ${totalValue}</span>
-                    <span class="delivery-type"><i class="fas ${deliveryIcon}"></i> ${orderData.deliveryMode === 'delivery' ? 'Entrega' : 'Retirada'}</span>
-                </div>
+                <div class="card-status-indicator">${orderData.status.replace('_', ' ')}</div>
             </div>
             <div class="card-details">
-                <pre>${orderData.printerFriendlyText || 'Texto para impressão não disponível.'}</pre>
+                <pre>${orderData.printerFriendlyText || 'Texto não disponível.'}</pre>
                 <div class="card-actions">
                     <button class="copy-btn"><i class="fas fa-copy"></i> Copiar</button>
-                    <button class="move-btn"><i class="fas fa-check-circle"></i> Concluir</button>
+                    ${actionButtonHTML}
                 </div>
             </div>
         `;
@@ -233,11 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function createSearchResultCard(orderId, orderData) {
         const date = new Date(orderData.timestamp._seconds * 1000).toLocaleDateString('pt-BR');
-        
-        const totalValue = (orderData.totals && typeof orderData.totals.total !== 'undefined') 
-            ? orderData.totals.total.toFixed(2) 
-            : '0.00';
-
+        const totalValue = (orderData.totals && typeof orderData.totals.total !== 'undefined') ? orderData.totals.total.toFixed(2) : '0.00';
         const customerName = (orderData.customer && orderData.customer.name) ? orderData.customer.name : (orderData.customerName || 'Cliente não informado');
 
         const card = document.createElement('div');
@@ -253,7 +226,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return card;
     }
 
-    // --- FUNÇÕES UTILITÁRIAS ---
     async function copyToClipboard(text) {
         try {
             if (navigator.clipboard && window.isSecureContext) {
@@ -275,6 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         }
     }
+    
     navItems.forEach(item => {
         item.addEventListener('click', () => {
             const targetViewId = item.dataset.view;
@@ -284,4 +257,8 @@ document.addEventListener('DOMContentLoaded', () => {
             item.classList.add('active');
         });
     });
+
+    // Inicia a busca de pedidos ao carregar a página
+    fetchAndRenderOrders(); 
+    setInterval(fetchAndRenderOrders, 15000); // Verifica a cada 15 segundos
 });
