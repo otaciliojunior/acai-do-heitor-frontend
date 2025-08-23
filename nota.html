@@ -98,14 +98,14 @@
             margin-bottom: 16px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.06);
             border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
             opacity: 1;
             transform: scale(1);
+            position: relative;
+            overflow: hidden; /* Essencial para o efeito de swipe */
         }
-        .order-card.removing { opacity: 0; transform: scale(0.95); } /* Animação de remoção */
 
         .card-summary { padding: 16px; display: flex; justify-content: space-between; align-items: flex-start; cursor: pointer; }
-        .card-info h3 { font-size: 1.2rem; font-weight: 600; margin-bottom: 4px; }
+        .card-info h3 { font-size: 1.2rem; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; flex-wrap: wrap; }
         .card-info span { font-size: 0.9rem; color: var(--text-light); }
         .card-status-indicator {
             font-size: 0.8rem;
@@ -117,7 +117,6 @@
             flex-shrink: 0;
             margin-left: 10px;
         }
-        /* Cores por status */
         .status-novo .card-status-indicator { background-color: var(--status-novo); }
         .status-preparo .card-status-indicator { background-color: var(--status-preparo); color: var(--text-dark); }
         .status-entrega .card-status-indicator,
@@ -154,7 +153,6 @@
         .card-actions button:active { transform: scale(0.98); }
         .copy-btn { background-color: var(--text-light); }
 
-        /* Cores dos botões de ação */
         .status-btn.preparo { background-color: var(--status-preparo); color: var(--text-dark); }
         .status-btn.entrega, .status-btn.retirada { background-color: var(--status-entrega); }
         .status-btn.concluido { background-color: var(--primary-color); }
@@ -180,6 +178,80 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             display: flex; align-items: center; gap: 15px;
         }
+
+        /* Estilos para os Filtros */
+        .filter-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        .filter-btn {
+            padding: 10px 20px; border-radius: 20px;
+            border: 1px solid var(--border-color); background-color: var(--card-background);
+            color: var(--text-light); font-size: 0.9rem; font-weight: 600;
+            cursor: pointer; white-space: nowrap; transition: all 0.2s ease;
+        }
+        .filter-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .filter-container::-webkit-scrollbar { display: none; }
+
+        /* Estilos para o Timer */
+        .card-timer {
+            font-size: 0.9rem; font-weight: 700; color: var(--status-entrega);
+            margin-left: 8px; display: inline-flex; align-items: center; gap: 4px;
+        }
+        .card-timer.warn { color: var(--status-preparo); }
+        .card-timer.danger { color: #dc3545; }
+        
+        /* Estilos para o Ícone de Entrega/Retirada */
+        .delivery-icon { font-size: 1.1rem; margin-left: 8px; color: var(--text-light); }
+        
+        /* Estilos para o Gesto de Deslizar */
+        .card-content {
+            background-color: var(--card-background); position: relative;
+            z-index: 2; transition: transform 0.3s ease;
+        }
+        .order-card.swiping .card-content { transition: none; }
+        .swipe-action-background {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: var(--status-entrega); z-index: 1;
+            display: flex; align-items: center; padding-left: 20px;
+            color: white; font-size: 1.5rem; opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        /* INÍCIO DO CÓDIGO NOVO: Estilos para o Dashboard */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        .metric-card {
+            background-color: var(--card-background);
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            text-align: center;
+        }
+        .metric-card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .metric-card-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        /* FIM DO CÓDIGO NOVO */
     </style>
 </head>
 <body>
@@ -197,7 +269,8 @@
     </header>
 
     <main>
-        <div id="new-orders-view" class="view active"></div>
+        <div id="new-orders-view" class="view active">
+            </div>
         <div id="search-view" class="view">
             <form id="search-form">
                 <input type="search" id="search-input" placeholder="Nome ou Nº do pedido" required>
@@ -207,7 +280,9 @@
                 <div class="message-box">Busque por pedidos concluídos.</div>
             </div>
         </div>
-    </main>
+        <div id="dashboard-view" class="view">
+            </div>
+        </main>
 
     <footer class="bottom-nav">
         <button class="nav-item active" data-view="new-orders-view">
@@ -218,7 +293,11 @@
             <i class="fas fa-history"></i>
             <span>Buscar</span>
         </button>
-    </footer>
+        <button class="nav-item" data-view="dashboard-view">
+            <i class="fas fa-chart-line"></i>
+            <span>Relatório</span>
+        </button>
+        </footer>
 
     <audio id="notification-sound" preload="auto">
         <source src="notificar/novo-pedido.ogg" type="audio/ogg">
