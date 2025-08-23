@@ -18,7 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let soundEnabled = false;
     let knownOrderIds = new Set();
-    let allOrdersCache = [];
+    // --- ALTERAÇÃO ESTRATÉGICA ---
+    // A variável de cache agora guarda apenas os pedidos ativos, não mais todos.
+    let activeOrdersCache = []; 
     let currentFilter = 'all';
 
     // --- LÓGICA DE MODAL ---
@@ -62,7 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ status: newStatus }) 
             });
             if (!response.ok) throw new Error('Falha ao atualizar o pedido.');
-            await fetchAndRenderOrders();
+            // --- ALTERAÇÃO ESTRATÉGICA ---
+            // Apenas atualiza os dados, não busca mais tudo de novo.
+            await fetchActiveOrders();
         } catch (error) {
             console.error("Erro ao atualizar status:", error);
             alert('Não foi possível atualizar o status do pedido.');
@@ -72,34 +76,52 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
-
-    // --- FUNÇÃO PARA BUSCAR E RENDERIZAR PEDIDOS E DASHBOARD ---
-    async function fetchAndRenderOrders() {
+    
+    // --- FUNÇÃO ESTRATÉGICA: Busca apenas os pedidos ATIVOS ---
+    async function fetchActiveOrders() {
         try {
-            const response = await fetch(`${BACKEND_URL}/orders`);
-            if (!response.ok) throw new Error('Falha ao buscar pedidos.');
-            allOrdersCache = await response.json();
+            // A requisição agora é para a nova rota otimizada.
+            const response = await fetch(`${BACKEND_URL}/active-orders`);
+            if (!response.ok) throw new Error('Falha ao buscar pedidos ativos.');
             
-            const activeOrders = allOrdersCache.filter(order => order.data.status !== 'concluido');
-            const newOrderIds = new Set(activeOrders.filter(o => o.data.status === 'novo').map(o => o.id));
-            if (newOrderIds.size > knownOrderIds.size && soundEnabled) {
-                notificationSound.play().catch(e => console.error("Erro ao tocar notificação:", e));
+            activeOrdersCache = await response.json();
+            
+            const newOrderIds = new Set(activeOrdersCache.filter(o => o.data.status === 'novo').map(o => o.id));
+
+            // Lógica de notificação sonora para novos pedidos
+            if (newOrderIds.size > 0 && newOrderIds.size !== knownOrderIds.size && soundEnabled) {
+                const isNewOrder = [...newOrderIds].some(id => !knownOrderIds.has(id));
+                if (isNewOrder) {
+                    notificationSound.play().catch(e => console.error("Erro ao tocar notificação:", e));
+                }
             }
             knownOrderIds = newOrderIds;
 
-            updateOrderListView(activeOrders);
-            renderDashboard();
+            updateOrderListView(activeOrdersCache);
 
         } catch (error) {
-            console.error("Erro ao buscar pedidos:", error);
+            console.error("Erro ao buscar pedidos ativos:", error);
             newOrdersView.innerHTML = '<div class="message-box">Erro ao conectar com o servidor. Tente novamente.</div>';
         }
     }
     
+    // --- FUNÇÃO ESTRATÉGICA: Busca os dados do DASHBOARD ---
+    async function fetchDashboardData() {
+        try {
+            const response = await fetch(`${BACKEND_URL}/dashboard-stats`);
+            if (!response.ok) throw new Error('Falha ao buscar dados do dashboard.');
+            const stats = await response.json();
+            renderDashboard(stats);
+        } catch (error) {
+            console.error("Erro ao buscar dados do dashboard:", error);
+        }
+    }
+
     // --- FUNÇÃO PARA ATUALIZAR A LISTA DE PEDIDOS ---
     function updateOrderListView(activeOrders) {
         orderCountBadge.textContent = activeOrders.length;
         orderCountBadge.style.display = activeOrders.length > 0 ? 'inline-block' : 'none';
+        
         let filteredOrders;
         if (currentFilter === 'all') filteredOrders = activeOrders;
         else if (currentFilter === 'prontos') filteredOrders = activeOrders.filter(o => o.data.status === 'entrega' || o.data.status === 'pronto_retirada');
@@ -107,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const expandedIds = new Set(Array.from(document.querySelectorAll('.order-card.expanded')).map(c => c.dataset.id));
         newOrdersView.innerHTML = '';
+        
         const filterHTML = `
             <div class="filter-container">
                 <button class="filter-btn ${currentFilter === 'all' ? 'active' : ''}" data-filter="all">Todos</button>
@@ -115,15 +138,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button class="filter-btn ${currentFilter === 'prontos' ? 'active' : ''}" data-filter="prontos">Prontos</button>
             </div>`;
         newOrdersView.insertAdjacentHTML('beforeend', filterHTML);
+
         if (filteredOrders.length === 0) {
             newOrdersView.insertAdjacentHTML('beforeend', '<div class="message-box">Nenhum pedido encontrado para este filtro.</div>');
             return;
         }
+
+        // Ordenação prioriza status e depois o tempo
         filteredOrders.sort((a, b) => {
             const statusOrder = { 'novo': 1, 'preparo': 2, 'entrega': 3, 'pronto_retirada': 3 };
-            if ((statusOrder[a.data.status] || 99) !== (statusOrder[b.data.status] || 99)) return (statusOrder[a.data.status] || 99) - (statusOrder[b.data.status] || 99);
+            const statusA = statusOrder[a.data.status] || 99;
+            const statusB = statusOrder[b.data.status] || 99;
+            if (statusA !== statusB) return statusA - statusB;
             return a.data.timestamp._seconds - b.data.timestamp._seconds;
         });
+
         filteredOrders.forEach(order => {
             const card = createNewOrderCard(order.id, order.data);
             if (expandedIds.has(order.id)) card.classList.add('expanded');
@@ -135,6 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateTimersOnScreen() {
         document.querySelectorAll('.card-timer').forEach(timerEl => {
             const timestamp = parseInt(timerEl.dataset.timestamp, 10);
+            if(isNaN(timestamp)) return;
             const elapsedSeconds = Math.floor(Date.now() / 1000) - timestamp;
             const warningTime = 300, dangerTime = 600;
             timerEl.classList.toggle('danger', elapsedSeconds >= dangerTime);
@@ -146,16 +176,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- FUNÇÃO PARA RENDERIZAR O DASHBOARD ---
-    function renderDashboard() {
-        const now = new Date();
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-        const endOfDay = startOfDay + 24 * 60 * 60 * 1000;
-
-        const todaysOrders = allOrdersCache.filter(order => (order.data.timestamp._seconds * 1000) >= startOfDay && (order.data.timestamp._seconds * 1000) < endOfDay);
-        const concludedToday = todaysOrders.filter(o => o.data.status === 'concluido');
-        const totalRevenue = concludedToday.reduce((sum, order) => sum + (order.data.totals?.total || 0), 0);
-        const totalOrdersConcluded = concludedToday.length;
-        const averageTicket = totalOrdersConcluded > 0 ? (totalRevenue / totalOrdersConcluded) : 0;
+    // Agora recebe os dados prontos do servidor
+    function renderDashboard(stats) {
+        if (!stats) {
+            dashboardView.innerHTML = '<div class="message-box">Carregando dados...</div>';
+            return;
+        }
         
         const formatCurrency = (value) => `R$ ${value.toFixed(2).replace('.', ',')}`;
 
@@ -163,30 +189,31 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="dashboard-grid">
                 <div class="metric-card">
                     <div class="metric-card-title"><i class="fas fa-dollar-sign"></i> Faturamento</div>
-                    <div class="metric-card-value">${formatCurrency(totalRevenue)}</div>
+                    <div class="metric-card-value">${formatCurrency(stats.totalRevenue)}</div>
                 </div>
                 <div class="metric-card">
                     <div class="metric-card-title"><i class="fas fa-check-double"></i> Pedidos Concluídos</div>
-                    <div class="metric-card-value">${totalOrdersConcluded}</div>
+                    <div class="metric-card-value">${stats.totalOrdersConcluded}</div>
                 </div>
                 <div class="metric-card">
                     <div class="metric-card-title"><i class="fas fa-receipt"></i> Ticket Médio</div>
-                    <div class="metric-card-value">${formatCurrency(averageTicket)}</div>
+                    <div class="metric-card-value">${formatCurrency(stats.averageTicket)}</div>
                 </div>
                 <div class="metric-card">
                     <div class="metric-card-title"><i class="fas fa-box"></i> Total de Pedidos (Hoje)</div>
-                    <div class="metric-card-value">${todaysOrders.length}</div>
+                    <div class="metric-card-value">${stats.todaysOrdersCount}</div>
                 </div>
             </div>`;
     }
 
-    // --- NOVA FUNÇÃO: LÓGICA DO HISTÓRICO DO CLIENTE ---
+    // --- LÓGICA DO HISTÓRICO DO CLIENTE ---
+    // Permanece a mesma, pois o modal de busca já fornece os dados necessários
     function showCustomerHistory(customerPhone, customerName) {
         const modalTitle = document.getElementById('customer-history-title');
         const modalBody = document.getElementById('customer-history-body');
 
         modalTitle.textContent = `Histórico de ${customerName}`;
-        modalBody.innerHTML = '<p>Calculando histórico...</p>';
+        modalBody.innerHTML = '<p>Buscando histórico...</p>';
         openModal(customerHistoryModal);
 
         if (!customerPhone) {
@@ -194,59 +221,65 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const customerOrders = allOrdersCache.filter(order => order.data.customerPhone === customerPhone);
+        // A busca pelo histórico agora pode ser otimizada no futuro com uma rota própria
+        // Por enquanto, usamos os resultados da busca que já fizemos
+        // Esta função será chamada a partir dos resultados da busca
+        const searchTerm = customerName; // Simplificação para o exemplo
+        fetch(`${BACKEND_URL}/search?term=${encodeURIComponent(searchTerm)}`)
+            .then(res => res.json())
+            .then(customerOrders => {
+                 if (customerOrders.length === 0) {
+                    modalBody.innerHTML = '<div class="message-box">Nenhum pedido encontrado para este cliente.</div>';
+                    return;
+                }
 
-        if (customerOrders.length === 0) {
-            modalBody.innerHTML = '<div class="message-box">Nenhum pedido encontrado para este cliente.</div>';
-            return;
-        }
+                const totalOrders = customerOrders.length;
+                const totalSpent = customerOrders.reduce((sum, order) => sum + (order.data.totals?.total || 0), 0);
+                const formatCurrency = (value) => `R$ ${value.toFixed(2).replace('.', ',')}`;
+                
+                customerOrders.sort((a, b) => b.data.timestamp._seconds - a.data.timestamp._seconds);
 
-        const totalOrders = customerOrders.length;
-        const totalSpent = customerOrders.reduce((sum, order) => sum + (order.data.totals?.total || 0), 0);
-        const formatCurrency = (value) => `R$ ${value.toFixed(2).replace('.', ',')}`;
-        
-        customerOrders.sort((a, b) => b.data.timestamp._seconds - a.data.timestamp._seconds);
-
-        let historyHTML = `
-            <div class="history-metrics">
-                <div class="history-metric-item">
-                    <span class="history-metric-label">Total de Pedidos</span>
-                    <span class="history-metric-value">${totalOrders}</span>
-                </div>
-                <div class="history-metric-item">
-                    <span class="history-metric-label">Gasto Total</span>
-                    <span class="history-metric-value">${formatCurrency(totalSpent)}</span>
-                </div>
-            </div>
-            <h3 class="history-orders-title">Pedidos Recentes</h3>
-            <ul class="history-order-list">
-        `;
-
-        customerOrders.slice(0, 10).forEach(order => { // Mostra os últimos 10 pedidos
-            const date = new Date(order.data.timestamp._seconds * 1000).toLocaleDateString('pt-BR');
-            const total = order.data.totals?.total || 0;
-            historyHTML += `
-                <li class="history-order-item">
-                    <div class="history-order-info">
-                        <span class="history-order-id">Pedido #${order.data.orderId}</span>
-                        <span class="history-order-date">${date}</span>
+                let historyHTML = `
+                    <div class="history-metrics">
+                        <div class="history-metric-item">
+                            <span class="history-metric-label">Total de Pedidos</span>
+                            <span class="history-metric-value">${totalOrders}</span>
+                        </div>
+                        <div class="history-metric-item">
+                            <span class="history-metric-label">Gasto Total</span>
+                            <span class="history-metric-value">${formatCurrency(totalSpent)}</span>
+                        </div>
                     </div>
-                    <span class="history-order-total">${formatCurrency(total)}</span>
-                </li>
-            `;
-        });
+                    <h3 class="history-orders-title">Pedidos Recentes</h3>
+                    <ul class="history-order-list">
+                `;
 
-        historyHTML += '</ul>';
-        modalBody.innerHTML = historyHTML;
+                customerOrders.slice(0, 10).forEach(order => {
+                    const date = new Date(order.data.timestamp._seconds * 1000).toLocaleDateString('pt-BR');
+                    const total = order.data.totals?.total || 0;
+                    historyHTML += `
+                        <li class="history-order-item">
+                            <div class="history-order-info">
+                                <span class="history-order-id">Pedido #${order.data.orderId}</span>
+                                <span class="history-order-date">${date}</span>
+                            </div>
+                            <span class="history-order-total">${formatCurrency(total)}</span>
+                        </li>
+                    `;
+                });
+
+                historyHTML += '</ul>';
+                modalBody.innerHTML = historyHTML;
+            });
     }
+
 
     // --- EVENT LISTENERS ---
     newOrdersView.addEventListener('click', (e) => {
         const target = e.target;
         if (target.classList.contains('filter-btn')) {
             currentFilter = target.dataset.filter;
-            const activeOrders = allOrdersCache.filter(order => order.data.status !== 'concluido');
-            updateOrderListView(activeOrders);
+            updateOrderListView(activeOrdersCache);
         } else {
             const button = target.closest('button');
             if (!button) return;
@@ -302,16 +335,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- FUNÇÕES DE BUSCA ---
-    searchForm.addEventListener('submit', e => {
+    // --- ALTERAÇÃO ESTRATÉGICA ---
+    // A busca agora chama a nova rota no backend
+    searchForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const searchTerm = searchInput.value.trim().toLowerCase(); if (!searchTerm) return;
-        const results = allOrdersCache.filter(order => {
-            const o = order.data;
-            return (o.orderId || '').includes(searchTerm) ||
-                   ((o.customer?.name || o.customerName) || '').toLowerCase().includes(searchTerm) ||
-                   (o.printerFriendlyText || '').toLowerCase().includes(searchTerm);
-        });
-        renderSearchResults(results);
+        const searchTerm = searchInput.value.trim();
+        if (!searchTerm) return;
+
+        searchResultsContainer.innerHTML = '<div class="message-box">Buscando...</div>';
+        try {
+            const response = await fetch(`${BACKEND_URL}/search?term=${encodeURIComponent(searchTerm)}`);
+            if (!response.ok) throw new Error('Falha na busca.');
+            const results = await response.json();
+            renderSearchResults(results);
+        } catch (error) {
+            console.error("Erro na busca:", error);
+            searchResultsContainer.innerHTML = '<div class="message-box">Erro ao buscar. Tente novamente.</div>';
+        }
     });
     
     function renderSearchResults(results) {
@@ -322,16 +362,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     searchResultsContainer.addEventListener('click', (e) => {
-        const target = e.target.closest('.customer-name-link'); // Garante que pegamos o botão
+        const target = e.target.closest('.customer-name-link');
         if (target) {
             const customerName = target.dataset.customerName;
             const customerPhone = target.dataset.customerPhone;
-            showCustomerHistory(customerPhone, customerName); // Chama a nova função com os dados
+            showCustomerHistory(customerPhone, customerName);
         }
     });
 
 
-    // --- FUNÇÕES DE CRIAÇÃO DE HTML ---
+    // --- FUNÇÕES DE CRIAÇÃO DE HTML (sem grandes alterações) ---
     function createNewOrderCard(orderId, orderData) {
         const date = new Date(orderData.timestamp._seconds * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         const customerName = orderData.customer?.name || orderData.customerName || 'Cliente não informado';
@@ -424,17 +464,33 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById(targetViewId).classList.add('active');
             navItems.forEach(nav => nav.classList.remove('active'));
             item.classList.add('active');
+            if(targetViewId === 'dashboard-view') {
+                fetchDashboardData();
+            }
         });
     });
 
     // --- INICIALIZAÇÃO ---
-    customerHistoryModal.addEventListener('click', (e) => {
-        if (e.target.classList.contains('close-modal-btn') || e.target.classList.contains('modal-overlay')) {
-            closeModal(customerHistoryModal);
+    function initialize() {
+        customerHistoryModal.addEventListener('click', (e) => {
+            if (e.target.classList.contains('close-modal-btn') || e.target.classList.contains('modal-overlay')) {
+                closeModal(customerHistoryModal);
+            }
+        });
+    
+        // Função unificada para atualizar os dados
+        function updateAllData() {
+            fetchActiveOrders();
+            // Atualiza o dashboard apenas se ele estiver visível
+            if (document.getElementById('dashboard-view').classList.contains('active')) {
+                fetchDashboardData();
+            }
         }
-    });
 
-    fetchAndRenderOrders(); 
-    setInterval(fetchAndRenderOrders, 15000); 
-    setInterval(updateTimersOnScreen, 1000);
+        updateAllData(); // Primeira chamada
+        setInterval(updateAllData, 15000); // Polling para pedidos e dashboard
+        setInterval(updateTimersOnScreen, 1000); // Atualiza os timers a cada segundo
+    }
+
+    initialize();
 });
