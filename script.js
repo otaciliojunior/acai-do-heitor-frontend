@@ -28,14 +28,23 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentLimits = { cremes: 0, acompanhamentos: 0 };
     let activeOrderId = null;
     let trackingInterval = null;
+    let ordersHistory = [];
 
 
     // --- FUNÇÕES DE ACOMPANHAMENTO DE PEDIDO ---
     function startOrderTracking(orderId, orderNumber, deliveryMode) {
         activeOrderId = orderId;
-        localStorage.setItem('activeOrderId', orderId);
-        localStorage.setItem('activeOrderNumber', orderNumber);
-        localStorage.setItem('activeOrderMode', deliveryMode);
+        
+        const orderInHistory = ordersHistory.find(o => o.id === orderId);
+        if (!orderInHistory) {
+            ordersHistory.push({
+                id: orderId,
+                number: orderNumber,
+                mode: deliveryMode,
+                status: 'novo'
+            });
+            saveOrdersHistory();
+        }
 
         const trackingOrderIdElement = document.getElementById('tracking-order-id');
         if (trackingOrderIdElement) {
@@ -56,17 +65,29 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`${BACKEND_URL}/orders/${orderId}`);
             if (!response.ok) {
                 if (response.status === 404) {
-                    stopOrderTracking();
-                    closeModal('tracking-modal');
+                    updateOrderStatusInHistory(orderId, 'concluido');
                     showToastNotification("Seu pedido foi finalizado! Obrigado!", 'info');
+                    stopOrderTracking();
                 }
                 throw new Error('Status do pedido não pôde ser verificado.');
             }
             const data = await response.json();
+            updateOrderStatusInHistory(orderId, data.status);
             updateTrackingUI(data.status, data.deliveryMode);
+
         } catch (error) {
             console.error("Erro ao verificar status:", error);
-            if (trackingInterval) clearInterval(trackingInterval);
+        }
+    }
+
+    function updateOrderStatusInHistory(orderId, newStatus) {
+        const orderIndex = ordersHistory.findIndex(o => o.id === orderId);
+        if (orderIndex !== -1) {
+            ordersHistory[orderIndex].status = newStatus;
+            saveOrdersHistory();
+        }
+        if (newStatus === 'concluido' && activeOrderId === orderId) {
+            stopOrderTracking();
         }
     }
     
@@ -120,7 +141,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (status === 'concluido') {
-            stopOrderTracking();
+            setTimeout(() => {
+                closeModal('tracking-modal');
+            }, 3000);
         }
     }
 
@@ -128,21 +151,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (trackingInterval) clearInterval(trackingInterval);
         trackingInterval = null;
         activeOrderId = null;
-        localStorage.removeItem('activeOrderId');
-        localStorage.removeItem('activeOrderNumber');
-        localStorage.removeItem('activeOrderMode');
     }
     
     function checkForActiveOrder() {
-        const savedOrderId = localStorage.getItem('activeOrderId');
-        const savedOrderNumber = localStorage.getItem('activeOrderNumber');
-        const savedOrderMode = localStorage.getItem('activeOrderMode');
-        if (savedOrderId && savedOrderNumber && savedOrderMode) {
-            startOrderTracking(savedOrderId, savedOrderNumber, savedOrderMode);
+        const activeOrders = ordersHistory.filter(o => o.status !== 'concluido');
+        if (activeOrders.length > 0) {
+            // Garante que pegamos o mais recente para reabrir o rastreamento
+            const mostRecentActiveOrder = activeOrders.sort((a,b) => b.id.localeCompare(a.id))[0];
+            startOrderTracking(mostRecentActiveOrder.id, mostRecentActiveOrder.number, mostRecentActiveOrder.mode);
         }
     }
     
     // --- FUNÇÕES DE GERENCIAMENTO DE ESTADO ---
+    function saveOrdersHistory() {
+        localStorage.setItem('ordersHistory', JSON.stringify(ordersHistory));
+    }
+    function loadOrdersHistory() {
+        const savedHistory = localStorage.getItem('ordersHistory');
+        if (savedHistory) {
+            ordersHistory = JSON.parse(savedHistory);
+        }
+    }
+
     function saveOrderState() { try { const addressForm=document.getElementById('address-form'); const formData=new FormData(addressForm); const addressData=Object.fromEntries(formData.entries()); const orderState={cart:cart,address:addressData}; const stateWithTimestamp={data:orderState,timestamp:new Date().getTime()}; localStorage.setItem('orderState',JSON.stringify(stateWithTimestamp)); } catch (error) { console.error("Erro ao salvar o estado do pedido:", error); } }
     function loadOrderState() { const savedStateJSON=localStorage.getItem('orderState'); if (!savedStateJSON) return; try { const savedStateWithTimestamp=JSON.parse(savedStateJSON); const now=new Date().getTime(); const expirationTime=ORDER_EXPIRATION_MINUTES*60*1000; if (now - savedStateWithTimestamp.timestamp < expirationTime) { const savedData=savedStateWithTimestamp.data; cart=savedData.cart || []; updateCart(); if (savedData.address) { const address=savedData.address; const form=document.getElementById('address-form'); for (const key in address) { const input=form.elements[key]; if (input) { if (input.type==='radio') { if (input.value===address[key]) { input.checked=true; input.dispatchEvent(new Event('change', { bubbles: true })); } } else { input.value=address[key]; } } } } } else { localStorage.removeItem('orderState'); } } catch (error) { console.error("Erro ao carregar o estado do pedido:", error); localStorage.removeItem('orderState'); } }
     function saveUserInfo() { try { const form=document.getElementById('address-form'); const userInfo={name:form.elements['customer-name'].value,phone:form.elements['customer-phone'].value,street:form.elements['street-name'].value,number:form.elements['house-number'].value,location:form.elements['customer-location'].value}; localStorage.setItem('userInfo',JSON.stringify(userInfo)); } catch (error) { console.error("Erro ao salvar dados do usuário:", error); } }
@@ -168,7 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupScrollAnimations() { const observerOptions={root:null,rootMargin:'0px',threshold:0.1}; const observerCallback=(entries, observer) => { entries.forEach((entry, index) => { if (entry.isIntersecting) { entry.target.style.transitionDelay=`${index*100}ms`; entry.target.classList.add('is-visible'); observer.unobserve(entry.target); } }); }; const scrollObserver=new IntersectionObserver(observerCallback, observerOptions); document.querySelectorAll('.animate-on-scroll').forEach(el => scrollObserver.observe(el)); }
     function handleScrollEffects() { const heroTexts=document.querySelectorAll('.hero-text'); const scrollPosition=window.scrollY; const fadeOutDistance=400; if (scrollPosition < fadeOutDistance) { const opacity=1 - (scrollPosition/fadeOutDistance); const translateX=-scrollPosition/5; heroTexts.forEach(text => { text.style.opacity=opacity; text.style.transform=`translateX(${translateX}px)`; }); } else { heroTexts.forEach(text => { text.style.opacity=0; text.style.transform=`translateX(${-fadeOutDistance/5}px)`; }); } }
     
-    // ======================= INÍCIO DA ALTERAÇÃO =======================
     function generateWhatsAppMessage() {
         const name = document.getElementById('customer-name').value;
         const phone = document.getElementById('customer-phone').value;
@@ -222,7 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         message += `*Total: R$${total.toFixed(2)}*\n\n`;
     
-        // Lógica de troco para o WhatsApp
         if (paymentMethod === 'Dinheiro') {
             const needsChange = document.querySelector('input[name="needs-change"]:checked').value;
             if (needsChange === 'sim') {
@@ -295,7 +323,6 @@ document.addEventListener('DOMContentLoaded', () => {
         text += `TOTAL: R$ ${total.toFixed(2)}\n`;
         text += `PAGAMENTO: ${paymentMethod}\n`;
     
-        // Lógica de troco para o Painel/Impressão
         if (paymentMethod === 'Dinheiro') {
             const needsChange = document.querySelector('input[name="needs-change"]:checked').value;
             if (needsChange === 'sim') {
@@ -316,7 +343,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         return text;
     }
-    // ======================== FIM DA ALTERAÇÃO =========================
     
     async function saveOrderToBackend() {
         const orderId = Date.now().toString().slice(-6);
@@ -363,6 +389,58 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- FUNÇÕES DO MENU LATERAL E HISTÓRICO DE PEDIDOS (NOVAS) ---
+    function toggleSideNav() {
+        const nav = document.getElementById('main-nav');
+        const overlay = document.getElementById('menu-overlay');
+        nav.classList.toggle('open');
+        overlay.classList.toggle('visible');
+    }
+    
+    function displayOrdersHistory() {
+        const historyContainer = document.getElementById('orders-history-list');
+        historyContainer.innerHTML = '';
+
+        // Resetar e definir o filtro padrão para "Todos"
+        document.querySelector('.order-filter-btn[data-filter="all"]').classList.add('active');
+        document.querySelector('.order-filter-btn[data-filter="active"]').classList.remove('active');
+
+
+        if (ordersHistory.length === 0) {
+            historyContainer.innerHTML = '<p class="empty-history-message">Você ainda não fez nenhum pedido.</p>';
+        } else {
+            // Ordenar pedidos: ativos primeiro, depois por mais recente
+            const sortedHistory = [...ordersHistory].sort((a, b) => {
+                const aIsActive = a.status !== 'concluido';
+                const bIsActive = b.status !== 'concluido';
+
+                if (aIsActive && !bIsActive) return -1; // a vem primeiro
+                if (!aIsActive && bIsActive) return 1;  // b vem primeiro
+
+                // Se ambos estão no mesmo estado (ativos ou concluídos), ordenar pelo mais novo
+                return b.id.localeCompare(a.id);
+            });
+
+            sortedHistory.forEach(order => {
+                const statusText = order.status.replace('_', ' ').replace('pronto ', '');
+                const isActive = order.status !== 'concluido';
+                const activeClass = isActive ? 'is-active' : '';
+
+                const orderItem = `
+                    <div class="order-history-item ${activeClass}" data-status="${isActive ? 'active' : 'concluded'}">
+                        <div class="order-history-info">
+                            <h4>Pedido #${order.number}</h4>
+                            <span class="order-status-badge status-${order.status}">${statusText}</span>
+                        </div>
+                        <button class="btn-secondary track-history-btn" data-order-id="${order.id}">Acompanhar</button>
+                    </div>
+                `;
+                historyContainer.innerHTML += orderItem;
+            });
+        }
+        toggleSideNav();
+        openModal('orders-history-modal');
+    }
 
     function handleDeliveryTypeChange() { const deliveryMode = document.querySelector('input[name="delivery-type"]:checked').value; const addressFieldsContainer = document.getElementById('address-fields'); const locationInput = document.getElementById('customer-location'); const streetInput = document.getElementById('street-name'); const numberInput = document.getElementById('house-number'); if (deliveryMode === 'delivery') { addressFieldsContainer.style.display = 'block'; locationInput.required = true; streetInput.required = true; numberInput.required = true; } else { addressFieldsContainer.style.display = 'none'; locationInput.required = false; streetInput.required = false; numberInput.required = false; locationInput.value = ''; } updateCart(); }
     function getLocationOptions() { return [ { value: '0.00', text: 'Assentamento – Entrega grátis' }, { value: '3.00', text: 'Riacho do Sangue – R$ 3,00' }, { value: '4.00', text: 'Riacho de Benção – R$ 4,00' }, { value: '4.00', text: 'Peri Peri – R$ 4,00' }, { value: '3.00', text: 'Quilombo – R$ 3,00' }, { value: '3.00', text: 'Tabatinga – R$ 3,00' }, { value: '4.00', text: 'Lagoa Seca – R$ 4,00' }, { value: '5.00', text: 'Barro Branco – R$ 5,00' }, { value: '6.00', text: 'Lagoa do Boi – R$ 6,00' }, { value: '8.00', text: 'Cajarana – R$ 8,00' }, { value: '10.00', text: 'Canabrava – R$ 10,00' } ]; }
@@ -376,8 +454,9 @@ document.addEventListener('DOMContentLoaded', () => {
         loadProducts();
         loadCustomizationOptions();
         loadUserInfo(); 
+        loadOrdersHistory();
         
-        if (!localStorage.getItem('activeOrderId')) {
+        if (ordersHistory.length === 0) {
             loadOrderState();
         }
 
@@ -391,6 +470,41 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('input[name="needs-change"]').forEach(radio => { radio.addEventListener('change', (e) => { document.getElementById('change-amount-group').style.display = e.target.value === 'sim' ? 'block' : 'none'; }); });
         document.querySelectorAll('input[name="delivery-type"]').forEach(radio => { radio.addEventListener('change', handleDeliveryTypeChange); });
         
+        document.getElementById('menu-toggle-btn').addEventListener('click', toggleSideNav);
+        document.getElementById('close-nav-btn').addEventListener('click', toggleSideNav);
+        document.getElementById('menu-overlay').addEventListener('click', toggleSideNav);
+        document.getElementById('my-orders-link').addEventListener('click', (e) => {
+            e.preventDefault();
+            displayOrdersHistory();
+        });
+
+        const orderFilterContainer = document.querySelector('.order-filter-controls');
+        if (orderFilterContainer) {
+            orderFilterContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('order-filter-btn')) {
+                    // Update active button state
+                    orderFilterContainer.querySelector('.active').classList.remove('active');
+                    e.target.classList.add('active');
+                    
+                    // Apply the filter
+                    const filter = e.target.dataset.filter;
+                    const orderItems = document.querySelectorAll('#orders-history-list .order-history-item');
+                    
+                    orderItems.forEach(item => {
+                        if (filter === 'all') {
+                            item.style.display = 'flex';
+                        } else if (filter === 'active') {
+                            if (item.dataset.status === 'active') {
+                                item.style.display = 'flex';
+                            } else {
+                                item.style.display = 'none';
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
         document.body.addEventListener('click', (e) => {
             const productItem = e.target.closest('.product-item');
             if (productItem && !productItem.classList.contains('unavailable')) {
@@ -453,17 +567,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const customModal = document.getElementById('customization-modal');
         customModal.querySelector('#customization-form').addEventListener('change', enforceSelectionLimits);
-        // ======================= INÍCIO DA CORREÇÃO =======================
         customModal.addEventListener('click', (e) => {
-            // Lógica para fechar o modal, agora com a classe correta
             if (e.target.closest('.close-custom-modal-btn')) {
                 closeModal('customization-modal');
             }
-            // Lógica para adicionar item ao carrinho
             if (e.target.id === 'add-custom-to-cart-btn') {
                 addCustomizedItemToCart();
             }
-            // Lógica para os botões de quantidade
             if (e.target.matches('.quantity-btn')) {
                 let qty = currentCustomizingProduct.quantity;
                 if (e.target.dataset.action === 'decrease' && qty > 1) qty--;
@@ -473,7 +583,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateCustomPrice();
             }
         });
-        // ======================== FIM DA CORREÇÃO =========================
+
+        document.getElementById('orders-history-modal').addEventListener('click', (e) => {
+            if (e.target.classList.contains('track-history-btn')) {
+                const orderId = e.target.dataset.orderId;
+                const orderToTrack = ordersHistory.find(o => o.id === orderId);
+                if (orderToTrack) {
+                    closeModal('orders-history-modal');
+                    startOrderTracking(orderToTrack.id, orderToTrack.number, orderToTrack.mode);
+                }
+            }
+        });
 
         document.getElementById('view-menu-btn').addEventListener('click', (e) => { e.preventDefault(); document.getElementById('menu').scrollIntoView({ behavior: 'smooth' }); });
         

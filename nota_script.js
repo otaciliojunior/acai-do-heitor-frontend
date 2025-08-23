@@ -1,4 +1,4 @@
-// nota_script.js (Com filtros, timers, ícones, swipe e DASHBOARD)
+// nota_script.js (Com Histórico do Cliente COMPLETO)
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- ELEMENTOS DA UI E CONFIGURAÇÕES ---
@@ -13,12 +13,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchResultsContainer = document.getElementById('search-results');
     const soundActivationOverlay = document.getElementById('sound-activation-overlay');
     const soundActivationButton = document.getElementById('sound-activation-button');
-    const dashboardView = document.getElementById('dashboard-view'); // Novo elemento
+    const dashboardView = document.getElementById('dashboard-view');
+    const customerHistoryModal = document.getElementById('customer-history-modal');
 
     let soundEnabled = false;
     let knownOrderIds = new Set();
     let allOrdersCache = [];
     let currentFilter = 'all';
+
+    // --- LÓGICA DE MODAL ---
+    function openModal(modalElement) {
+        modalElement.classList.add('visible');
+    }
+
+    function closeModal(modalElement) {
+        modalElement.classList.remove('visible');
+    }
 
     // --- LÓGICA DE ATIVAÇÃO DE SOM ---
     soundActivationButton.addEventListener('click', () => {
@@ -78,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
             knownOrderIds = newOrderIds;
 
             updateOrderListView(activeOrders);
-            renderDashboard(); // << CHAMADA PARA ATUALIZAR O DASHBOARD
+            renderDashboard();
 
         } catch (error) {
             console.error("Erro ao buscar pedidos:", error);
@@ -135,26 +145,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- NOVA FUNÇÃO: RENDERIZAR O DASHBOARD ---
+    // --- FUNÇÃO PARA RENDERIZAR O DASHBOARD ---
     function renderDashboard() {
         const now = new Date();
         const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
         const endOfDay = startOfDay + 24 * 60 * 60 * 1000;
 
-        const todaysOrders = allOrdersCache.filter(order => {
-            const orderTime = order.data.timestamp._seconds * 1000;
-            return orderTime >= startOfDay && orderTime < endOfDay;
-        });
-
+        const todaysOrders = allOrdersCache.filter(order => (order.data.timestamp._seconds * 1000) >= startOfDay && (order.data.timestamp._seconds * 1000) < endOfDay);
         const concludedToday = todaysOrders.filter(o => o.data.status === 'concluido');
-        
-        const totalRevenue = concludedToday.reduce((sum, order) => {
-            return sum + (order.data.totals?.total || 0);
-        }, 0);
-
+        const totalRevenue = concludedToday.reduce((sum, order) => sum + (order.data.totals?.total || 0), 0);
         const totalOrdersConcluded = concludedToday.length;
         const averageTicket = totalOrdersConcluded > 0 ? (totalRevenue / totalOrdersConcluded) : 0;
-        const totalOrdersToday = todaysOrders.length;
         
         const formatCurrency = (value) => `R$ ${value.toFixed(2).replace('.', ',')}`;
 
@@ -174,20 +175,80 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="metric-card">
                     <div class="metric-card-title"><i class="fas fa-box"></i> Total de Pedidos (Hoje)</div>
-                    <div class="metric-card-value">${totalOrdersToday}</div>
+                    <div class="metric-card-value">${todaysOrders.length}</div>
+                </div>
+            </div>`;
+    }
+
+    // --- NOVA FUNÇÃO: LÓGICA DO HISTÓRICO DO CLIENTE ---
+    function showCustomerHistory(customerPhone, customerName) {
+        const modalTitle = document.getElementById('customer-history-title');
+        const modalBody = document.getElementById('customer-history-body');
+
+        modalTitle.textContent = `Histórico de ${customerName}`;
+        modalBody.innerHTML = '<p>Calculando histórico...</p>';
+        openModal(customerHistoryModal);
+
+        if (!customerPhone) {
+            modalBody.innerHTML = '<div class="message-box">Não foi possível identificar o cliente (sem telefone).</div>';
+            return;
+        }
+
+        const customerOrders = allOrdersCache.filter(order => order.data.customerPhone === customerPhone);
+
+        if (customerOrders.length === 0) {
+            modalBody.innerHTML = '<div class="message-box">Nenhum pedido encontrado para este cliente.</div>';
+            return;
+        }
+
+        const totalOrders = customerOrders.length;
+        const totalSpent = customerOrders.reduce((sum, order) => sum + (order.data.totals?.total || 0), 0);
+        const formatCurrency = (value) => `R$ ${value.toFixed(2).replace('.', ',')}`;
+        
+        customerOrders.sort((a, b) => b.data.timestamp._seconds - a.data.timestamp._seconds);
+
+        let historyHTML = `
+            <div class="history-metrics">
+                <div class="history-metric-item">
+                    <span class="history-metric-label">Total de Pedidos</span>
+                    <span class="history-metric-value">${totalOrders}</span>
+                </div>
+                <div class="history-metric-item">
+                    <span class="history-metric-label">Gasto Total</span>
+                    <span class="history-metric-value">${formatCurrency(totalSpent)}</span>
                 </div>
             </div>
+            <h3 class="history-orders-title">Pedidos Recentes</h3>
+            <ul class="history-order-list">
         `;
+
+        customerOrders.slice(0, 10).forEach(order => { // Mostra os últimos 10 pedidos
+            const date = new Date(order.data.timestamp._seconds * 1000).toLocaleDateString('pt-BR');
+            const total = order.data.totals?.total || 0;
+            historyHTML += `
+                <li class="history-order-item">
+                    <div class="history-order-info">
+                        <span class="history-order-id">Pedido #${order.data.orderId}</span>
+                        <span class="history-order-date">${date}</span>
+                    </div>
+                    <span class="history-order-total">${formatCurrency(total)}</span>
+                </li>
+            `;
+        });
+
+        historyHTML += '</ul>';
+        modalBody.innerHTML = historyHTML;
     }
 
     // --- EVENT LISTENERS ---
     newOrdersView.addEventListener('click', (e) => {
-        if (e.target.classList.contains('filter-btn')) {
-            currentFilter = e.target.dataset.filter;
+        const target = e.target;
+        if (target.classList.contains('filter-btn')) {
+            currentFilter = target.dataset.filter;
             const activeOrders = allOrdersCache.filter(order => order.data.status !== 'concluido');
             updateOrderListView(activeOrders);
         } else {
-            const button = e.target.closest('button');
+            const button = target.closest('button');
             if (!button) return;
             const card = button.closest('.order-card');
             if (!card) return;
@@ -211,10 +272,8 @@ document.addEventListener('DOMContentLoaded', () => {
     newOrdersView.addEventListener('touchstart', e => {
         const targetCard = e.target.closest('.order-card');
         if (targetCard && !e.target.closest('button') && targetCard.querySelector('.status-btn')) {
-            isSwiping = true;
-            swipedCard = targetCard;
-            touchStartX = e.touches[0].clientX;
-            swipedCard.classList.add('swiping');
+            isSwiping = true; swipedCard = targetCard;
+            touchStartX = e.touches[0].clientX; swipedCard.classList.add('swiping');
         }
     }, { passive: true });
     newOrdersView.addEventListener('touchmove', e => {
@@ -227,8 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: true });
     newOrdersView.addEventListener('touchend', () => {
         if (!isSwiping || !swipedCard) return;
-        isSwiping = false;
-        swipedCard.classList.remove('swiping');
+        isSwiping = false; swipedCard.classList.remove('swiping');
         const swipeThreshold = 100;
         if (currentX > swipeThreshold) {
             const actionButton = swipedCard.querySelector('.status-btn');
@@ -246,8 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- FUNÇÕES DE BUSCA ---
     searchForm.addEventListener('submit', e => {
         e.preventDefault();
-        const searchTerm = searchInput.value.trim().toLowerCase();
-        if (!searchTerm) return;
+        const searchTerm = searchInput.value.trim().toLowerCase(); if (!searchTerm) return;
         const results = allOrdersCache.filter(order => {
             const o = order.data;
             return (o.orderId || '').includes(searchTerm) ||
@@ -264,6 +321,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    searchResultsContainer.addEventListener('click', (e) => {
+        const target = e.target.closest('.customer-name-link'); // Garante que pegamos o botão
+        if (target) {
+            const customerName = target.dataset.customerName;
+            const customerPhone = target.dataset.customerPhone;
+            showCustomerHistory(customerPhone, customerName); // Chama a nova função com os dados
+        }
+    });
+
+
     // --- FUNÇÕES DE CRIAÇÃO DE HTML ---
     function createNewOrderCard(orderId, orderData) {
         const date = new Date(orderData.timestamp._seconds * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -274,8 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let actionButtonHTML = '', swipeActionIcon = '';
         if (orderData.status === 'novo') {
-            const buttonText = `<i class="fas fa-fire-alt"></i> Mover para Preparo`;
-            actionButtonHTML = `<button class="status-btn preparo" data-next-status="preparo">${buttonText}</button>`;
+            actionButtonHTML = `<button class="status-btn preparo" data-next-status="preparo"><i class="fas fa-fire-alt"></i> Mover para Preparo</button>`;
             swipeActionIcon = '<i class="fas fa-arrow-right"></i>';
         } else if (orderData.status === 'preparo') {
             const nextStatus = orderData.deliveryMode === 'delivery' ? 'entrega' : 'pronto_retirada';
@@ -285,8 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
             actionButtonHTML = `<button class="status-btn ${buttonClass}" data-next-status="${nextStatus}"><i class="fas ${buttonIcon}"></i> ${buttonText}</button>`;
             swipeActionIcon = '<i class="fas fa-arrow-right"></i>';
         } else if (orderData.status === 'entrega' || orderData.status === 'pronto_retirada') {
-            const buttonText = `<i class="fas fa-check-double"></i> Concluir Pedido`;
-            actionButtonHTML = `<button class="status-btn concluido" data-next-status="concluido">${buttonText}</button>`;
+            actionButtonHTML = `<button class="status-btn concluido" data-next-status="concluido"><i class="fas fa-check-double"></i> Concluir Pedido</button>`;
             swipeActionIcon = '<i class="fas fa-check-double"></i>';
         }
         
@@ -307,7 +372,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="card-details"><div class="details-content">
                     <pre>${orderData.printerFriendlyText || 'Texto do pedido não disponível.'}</pre>
-                    <div class="card-actions">${actionButtonHTML}<button class="copy-btn"><i class="fas fa-copy"></i> Copiar Pedido</button></div>
+                    <div class="card-actions">
+                        ${actionButtonHTML}
+                        <button class="copy-btn"><i class="fas fa-copy"></i> Copiar Pedido</button>
+                    </div>
                 </div></div>
             </div>`;
         card.querySelector('.card-summary').addEventListener('click', () => card.classList.toggle('expanded'));
@@ -318,9 +386,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const date = new Date(orderData.timestamp._seconds * 1000).toLocaleDateString('pt-BR');
         const total = (orderData.totals?.total || 0).toFixed(2).replace('.',',');
         const customerName = orderData.customer?.name || orderData.customerName || 'Cliente não informado';
+        const customerPhone = orderData.customerPhone || '';
         const card = document.createElement('div');
         card.className = 'result-card';
-        card.innerHTML = `<h3>${customerName}</h3><p><strong>Pedido #${orderData.orderId || ''}</strong> <br> Data: ${date} | Total: R$ ${total} | Status: <strong>${orderData.status || 'sem status'}</strong></p>`;
+        card.innerHTML = `
+            <h3>
+                <button class="customer-name-link" data-customer-name="${customerName}" data-customer-phone="${customerPhone}">
+                    ${customerName}
+                </button>
+            </h3>
+            <p>
+                <strong>Pedido #${orderData.orderId || ''}</strong> <br>
+                Data: ${date} | Total: R$ ${total} | Status: <strong>${orderData.status || 'sem status'}</strong>
+            </p>`;
         return card;
     }
 
@@ -328,7 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function copyToClipboard(text) {
         try {
             if (navigator.clipboard) await navigator.clipboard.writeText(text);
-            else { /* Fallback for older browsers */
+            else {
                 const textArea = document.createElement('textarea');
                 textArea.value = text;
                 textArea.style.position = 'fixed'; textArea.style.opacity = '0';
@@ -350,6 +428,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- INICIALIZAÇÃO ---
+    customerHistoryModal.addEventListener('click', (e) => {
+        if (e.target.classList.contains('close-modal-btn') || e.target.classList.contains('modal-overlay')) {
+            closeModal(customerHistoryModal);
+        }
+    });
+
     fetchAndRenderOrders(); 
     setInterval(fetchAndRenderOrders, 15000); 
     setInterval(updateTimersOnScreen, 1000);
