@@ -76,9 +76,13 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Lógica de notificação sonora para novos pedidos
             const newOrderIds = new Set(activeOrders.filter(o => o.data.status === 'novo').map(o => o.id));
-            if (knownOrderIds.size > 0 && newOrderIds.size > knownOrderIds.size && soundEnabled) {
+            
+            // ======================= INÍCIO DA CORREÇÃO =======================
+            if (newOrderIds.size > knownOrderIds.size && soundEnabled) {
                 notificationSound.play().catch(e => console.error("Erro ao tocar notificação:", e));
             }
+            // ======================== FIM DA CORREÇÃO =========================
+            
             knownOrderIds = newOrderIds;
 
             updateOrderListView(activeOrders);
@@ -94,7 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
         orderCountBadge.textContent = activeOrders.length;
         orderCountBadge.style.display = activeOrders.length > 0 ? 'inline-block' : 'none';
 
-        // ======================= INÍCIO DA CORREÇÃO =======================
         // 1. Memoriza quais cards estão abertos (expandidos) antes de atualizar
         const expandedIds = new Set();
         document.querySelectorAll('.order-card.expanded').forEach(card => {
@@ -102,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         newOrdersView.innerHTML = ''; // Limpa a visualização atual
-        // ======================== FIM DA CORREÇÃO =========================
 
         if (activeOrders.length === 0) {
             newOrdersView.innerHTML = '<div class="message-box">Nenhum pedido ativo no momento.</div>';
@@ -123,12 +125,10 @@ document.addEventListener('DOMContentLoaded', () => {
         activeOrders.forEach(order => {
             const card = createNewOrderCard(order.id, order.data);
 
-            // ======================= INÍCIO DA CORREÇÃO =======================
             // 2. Se o card estava aberto antes, ele é reaberto na nova lista
             if (expandedIds.has(order.id)) {
                 card.classList.add('expanded');
             }
-            // ======================== FIM DA CORREÇÃO =========================
             
             newOrdersView.appendChild(card);
         });
